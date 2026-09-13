@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "OpusFlex AI - Smart Video-to-Shorts Generator & Caption Editor"
+description = "A premium browser-only video studio for turning long videos into captioned vertical shorts with smart clip controls, speaker-aware framing, transcript editing, and export interactions."
+version = "1.0.0"
+id = "artifacts/opusflex-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25884
+
+[services.development]
+run = "pnpm --filter @workspace/opusflex-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/opusflex-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/opusflex-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25884"
+BASE_PATH = "/"
