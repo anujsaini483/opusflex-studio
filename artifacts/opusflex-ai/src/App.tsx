@@ -19,6 +19,7 @@ type CutStyle = 'hook' | 'topic' | 'equal';
 type CaptionPreset = 'MrBeast Bold' | 'Hormozi Style' | 'Minimal Clean' | 'Cyber Neon';
 type Clip = { id: number; title: string; start: number; length: number; score: number; color: string; status?: string };
 type Word = { text: string; start: number; end: number; color: string };
+type RenderedVideo = { blob: Blob; mimeType: string; filename: string };
 
 const queryClient = new QueryClient();
 const DEMO_DURATION = 187;
@@ -45,6 +46,44 @@ function formatTime(seconds: number) {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
   return `${mins}:${secs}`;
+}
+
+function getRecordingMimeType() {
+  if (typeof MediaRecorder === 'undefined') return '';
+  const candidates = [
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm',
+  ];
+  return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? '';
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const href = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = href;
+  anchor.download = filename;
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => window.URL.revokeObjectURL(href), 1000);
+}
+
+function seekVideo(video: HTMLVideoElement, time: number) {
+  return new Promise<void>((resolve) => {
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      video.removeEventListener('seeked', finish);
+      resolve();
+    };
+    video.addEventListener('seeked', finish, { once: true });
+    video.currentTime = time;
+    window.setTimeout(finish, 500);
+  });
 }
 
 function App() {
@@ -89,6 +128,7 @@ function Studio() {
   const [activeWord, setActiveWord] = useState(1);
   const [exportQueue, setExportQueue] = useState<number[]>([]);
   const [exportProgress, setExportProgress] = useState<Record<number, number>>({});
+  const renderedVideosRef = useRef<Record<number, RenderedVideo>>({});
   const [toast, setToast] = useState('');
   const [mobilePanel, setMobilePanel] = useState<'source' | 'edit' | 'clips'>('edit');
 
@@ -175,30 +215,144 @@ function Studio() {
     setWords((current) => current.map((word, wordIndex) => wordIndex === index ? { ...word, ...patch } : word));
   }
 
-  function toggleExport(id: number) {
-    if (exportQueue.includes(id)) return;
-    setExportQueue((queue) => [...queue, id]);
-    setExportProgress((state) => ({ ...state, [id]: 5 }));
-    let value = 5;
-    const timer = window.setInterval(() => {
-      value += 19;
-      setExportProgress((state) => ({ ...state, [id]: Math.min(value, 100) }));
-      if (value >= 100) {
-        window.clearInterval(timer);
-        setToast('Preview render complete — download is ready');
-      }
-    }, 180);
-  }
+  async function downloadClip(clip: Clip, clipNumber: number) {
+    const previous = renderedVideosRef.current[clip.id];
+    if (previous) {
+      downloadBlob(previous.blob, previous.filename);
+      setToast('Download started — check your Gallery or Downloads');
+      return;
+    }
 
-  function downloadClip(clip: Clip) {
-    const payload = new Blob([`OpusFlex AI local export\n${clip.title}\nTimecode ${formatTime(clip.start)} · ${clip.length}s\n`], { type: 'text/plain' });
-    const href = window.URL.createObjectURL(payload);
-    const anchor = document.createElement('a');
-    anchor.href = href;
-    anchor.download = `${clip.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.txt`;
-    anchor.click();
-    window.URL.revokeObjectURL(href);
-    setToast('Local demo export downloaded');
+    if (exportProgress[clip.id] && exportProgress[clip.id] < 100) return;
+
+    const mimeType = getRecordingMimeType();
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    const canvasSize = aspect === '9:16' ? [1080, 1920] : aspect === '1:1' ? [1080, 1080] : [1920, 1080];
+    canvas.width = canvasSize[0];
+    canvas.height = canvasSize[1];
+    const context = canvas.getContext('2d');
+
+    if (!mimeType || !canvas.captureStream || !context) {
+      setToast('This browser cannot render a downloadable video from canvas');
+      return;
+    }
+
+    setExportQueue((queue) => queue.includes(clip.id) ? queue : [...queue, clip.id]);
+    setExportProgress((state) => ({ ...state, [clip.id]: 1 }));
+
+    const wasPlaying = playing;
+    const oldVideoTime = video?.currentTime ?? 0;
+    const renderLength = videoUrl ? clip.length : Math.min(5, clip.length);
+    const stream = canvas.captureStream(30);
+    const chunks: BlobPart[] = [];
+    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+    const stopped = new Promise<Blob>((resolve, reject) => {
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data);
+      };
+      recorder.onerror = () => reject(new Error('MediaRecorder failed'));
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+    });
+
+    const drawFrame = () => {
+      const width = canvas.width;
+      const height = canvas.height;
+      const background = context.createLinearGradient(0, 0, width, height);
+      background.addColorStop(0, '#171b31');
+      background.addColorStop(0.52, '#504475');
+      background.addColorStop(1, '#171c31');
+      context.fillStyle = background;
+      context.fillRect(0, 0, width, height);
+
+      if (video && videoUrl && video.readyState >= 2 && video.videoWidth > 0) {
+        const sourceAspect = video.videoWidth / video.videoHeight;
+        const targetAspect = width / height;
+        let sourceWidth = video.videoWidth;
+        let sourceHeight = video.videoHeight;
+        let sourceX = 0;
+        let sourceY = 0;
+        if (sourceAspect > targetAspect) {
+          sourceWidth = video.videoHeight * targetAspect;
+          sourceX = (video.videoWidth - sourceWidth) * (speakerFocus ? 0.42 : 0.5);
+        } else {
+          sourceHeight = video.videoWidth / targetAspect;
+          sourceY = (video.videoHeight - sourceHeight) * 0.5;
+        }
+        context.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
+      } else {
+        context.fillStyle = 'rgba(137, 109, 208, .22)';
+        context.beginPath();
+        context.ellipse(width * 0.51, height * 0.52, width * 0.28, height * 0.3, 0, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = 'rgba(201, 159, 147, .9)';
+        context.beginPath();
+        context.ellipse(width * 0.51, height * 0.35, width * 0.18, height * 0.14, 0, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = 'rgba(94, 67, 88, .85)';
+        context.beginPath();
+        context.ellipse(width * 0.51, height * 0.6, width * 0.27, height * 0.3, 0, 0, Math.PI * 2);
+        context.fill();
+      }
+
+      const captionY = captionPosition === 'Top' ? height * 0.18 : captionPosition === 'Center' ? height * 0.52 : height * 0.78;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.font = `${captionPreset === 'Minimal Clean' ? 500 : 800} ${Math.round(captionSize * (height / 1920))}px ${captionFont}`;
+      context.lineWidth = Math.max(4, height / 240);
+      context.strokeStyle = 'rgba(10, 10, 16, .9)';
+      context.strokeText(activeCaption, width / 2, captionY);
+      context.fillStyle = activeWordColor;
+      context.fillText(activeCaption, width / 2, captionY);
+      if (splitScreen) {
+        context.strokeStyle = 'rgba(228, 240, 59, .8)';
+        context.lineWidth = Math.max(2, height / 480);
+        context.strokeRect(width * 0.06, height * 0.06, width * 0.88, height * 0.41);
+        context.strokeRect(width * 0.06, height * 0.53, width * 0.88, height * 0.41);
+      }
+    };
+
+    try {
+      if (video && videoUrl) {
+        video.pause();
+        await seekVideo(video, clip.start);
+        await video.play();
+      }
+
+      recorder.start(100);
+      const startedAt = performance.now();
+      await new Promise<void>((resolve) => {
+        const frameTimer = window.setInterval(() => {
+          drawFrame();
+          const elapsed = (performance.now() - startedAt) / 1000;
+          const nextProgress = Math.min(96, Math.max(2, Math.round((elapsed / renderLength) * 96)));
+          setExportProgress((state) => ({ ...state, [clip.id]: nextProgress }));
+          if (elapsed >= renderLength) {
+            window.clearInterval(frameTimer);
+            resolve();
+          }
+        }, 33);
+      });
+      drawFrame();
+      recorder.stop();
+      const blob = await stopped;
+      const extension = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
+      const filename = `Short_Clip_${clipNumber}.${extension}`;
+      renderedVideosRef.current[clip.id] = { blob, mimeType, filename };
+      setExportProgress((state) => ({ ...state, [clip.id]: 100 }));
+      downloadBlob(blob, filename);
+      setToast(`${extension === 'mp4' ? 'MP4' : 'WebM fallback'} download started — check your Gallery`);
+    } catch {
+      setExportProgress((state) => ({ ...state, [clip.id]: 0 }));
+      setToast('Video render failed — try a shorter clip or another browser');
+    } finally {
+      stream.getTracks().forEach((track) => track.stop());
+      if (video) {
+        video.pause();
+        video.currentTime = oldVideoTime;
+        if (wasPlaying) void video.play().catch(() => undefined);
+      }
+    }
   }
 
   function downloadAll() {
@@ -209,7 +363,7 @@ function Studio() {
     anchor.download = 'opusflex-shorts.zip';
     anchor.click();
     window.URL.revokeObjectURL(href);
-    setToast('Download All Shorts queued as local ZIP');
+    setToast('Download All Clips queued as local ZIP');
   }
 
   function seekTimeline(event: React.MouseEvent<HTMLDivElement>) {
@@ -432,14 +586,14 @@ function Studio() {
               <div className="my-5 h-px bg-[#2d2a3c]" />
               <div className="flex items-center justify-between"><SectionLabel label="Generated clips" trailing={`${clips.length} READY`} /><button data-testid="button-sort-clips" onClick={() => setClips((current) => [...current].sort((a, b) => b.score - a.score))} className="text-[10px] text-[#8d82ad] hover:text-[#c8b7f9]">Sort score <ChevronDown size={12} className="inline" /></button></div>
               <div className="mt-2 space-y-2">
-                {clips.map((clip, index) => <ClipCard key={clip.id} clip={clip} index={index} selected={clip.id === selectedClipId} exported={exportQueue.includes(clip.id)} exportProgress={exportProgress[clip.id]} onSelect={() => { setSelectedClipId(clip.id); setCurrentTime(clip.start); }} onPreview={() => { setSelectedClipId(clip.id); setCurrentTime(clip.start); setPlaying(true); setToast(`Previewing “${clip.title}”`); }} onRender={() => toggleExport(clip.id)} onDownload={() => downloadClip(clip)} />)}
+                {clips.map((clip, index) => <ClipCard key={clip.id} clip={clip} index={index} selected={clip.id === selectedClipId} exported={exportQueue.includes(clip.id)} exportProgress={exportProgress[clip.id]} onSelect={() => { setSelectedClipId(clip.id); setCurrentTime(clip.start); }} onPreview={() => { setSelectedClipId(clip.id); setCurrentTime(clip.start); setPlaying(true); setToast(`Previewing “${clip.title}”`); }} onDownload={() => { void downloadClip(clip, index + 1); }} />)}
               </div>
               <div className="mt-4 rounded-lg border border-[#37324a] bg-[#1b1929] p-3">
                 <div className="flex items-center justify-between"><div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#ddd8e8]"><Gauge size={14} className="text-[#e4f03b]" /> Export queue</div><span className="studio-mono text-[10px] text-[#777286]">{exportQueue.length}/{clips.length}</span></div>
                 {exportQueue.length === 0 ? <div className="mt-2 text-[10px] leading-relaxed text-[#7e788d]">Render a clip to add it here. Exports are assembled locally with browser Blob APIs.</div> : <div className="mt-2 space-y-1.5">{exportQueue.map((id) => { const queued = clips.find((clip) => clip.id === id); return queued ? <div key={id} className="flex items-center justify-between text-[10px] text-[#aaa3b6]"><span className="max-w-[145px] truncate">{queued.title}</span><span className="studio-mono text-[#e4f03b]">{exportProgress[id] >= 100 ? 'READY' : `${exportProgress[id] ?? 0}%`}</span></div> : null; })}</div>}
-                <button data-testid="button-download-all" onClick={downloadAll} disabled={clips.length === 0} className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-[#e4f03b]/50 bg-[#292d18] py-2 text-[10px] font-bold text-[#e8ef8b] hover:bg-[#3a401e]"><Download size={13} />Download All Shorts (ZIP)</button>
               </div>
-              <div className="mt-3 flex gap-2 rounded-lg border border-[#302d41] bg-[#1a1926] p-2.5 text-[10px] leading-relaxed text-[#777186]"><Radio size={14} className="mt-0.5 shrink-0 text-[#9c7cff]" /><span><strong className="font-medium text-[#a69db9]">Browser-only processing.</strong> Full video render is limited by this tab; demo exports remain clear and usable for testing.</span></div>
+              <div className="mt-3 flex gap-2 rounded-lg border border-[#302d41] bg-[#1a1926] p-2.5 text-[10px] leading-relaxed text-[#777186]"><Radio size={14} className="mt-0.5 shrink-0 text-[#9c7cff]" /><span><strong className="font-medium text-[#a69db9]">Browser-only processing.</strong> MP4 is used when this browser supports native MP4 recording; otherwise OpusFlex uses a video/webm; codecs=vp9 fallback.</span></div>
+              <button data-testid="button-download-all" onClick={downloadAll} disabled={clips.length === 0} className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-[#4a435e] bg-[#211e2d] py-2 text-[10px] font-semibold text-[#aaa2bb] hover:border-[#74678e] hover:text-[#e9e1f7]"><Download size={13} />Download All Clips (.zip)</button>
             </section>
           </div>
         </main>
@@ -482,13 +636,16 @@ function DemoFrame({ compact = false, vertical = false }: { compact?: boolean; v
   </div>;
 }
 
-function ClipCard({ clip, index, selected, exported, exportProgress, onSelect, onPreview, onRender, onDownload }: { clip: Clip; index: number; selected: boolean; exported: boolean; exportProgress?: number; onSelect: () => void; onPreview: () => void; onRender: () => void; onDownload: () => void }) {
+function ClipCard({ clip, index, selected, exported, exportProgress, onSelect, onPreview, onDownload }: { clip: Clip; index: number; selected: boolean; exported: boolean; exportProgress?: number; onSelect: () => void; onPreview: () => void; onDownload: () => void }) {
   return <div data-testid={`card-clip-${clip.id}`} onClick={onSelect} className={`clip-card-enter group cursor-pointer rounded-lg border p-2.5 transition-all ${selected ? 'border-[#9b76ff] bg-[#29213f] shadow-[inset_3px_0_0_#a37cff]' : 'border-[#302d40] bg-[#1b1a27] hover:border-[#51466d]'}`} style={{ animationDelay: `${index * 55}ms` }}>
     <div className="flex gap-2.5">
       <div className="relative h-[54px] w-[39px] shrink-0 overflow-hidden rounded bg-[#363252]"><DemoFrame vertical compact /><span className="absolute bottom-1 left-1 rounded bg-[#13131c]/80 px-1 text-[8px] text-[#ddd7ee]">{formatTime(clip.start)}</span></div>
-      <div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div className="truncate text-[11px] font-semibold text-[#ddd9e6]">{clip.title}</div><div className="flex shrink-0 items-center gap-0.5 text-[10px] font-bold text-[#e4f03b]"><Zap size={10} fill="currentColor" />{clip.score}</div></div><div className="studio-mono mt-1 text-[9px] text-[#777186]">{formatTime(clip.start)} — {formatTime(clip.start + clip.length)} <span className="mx-1 text-[#4d485e]">·</span>{clip.length}s</div><div className="mt-2 flex items-center gap-1"><button data-testid={`button-preview-clip-${clip.id}`} onClick={(event) => { event.stopPropagation(); onPreview(); }} className="rounded bg-[#29253b] px-2 py-1 text-[9px] text-[#c9b9f7] hover:bg-[#3c3157]"><Play size={9} className="mr-1 inline" />Preview</button><button data-testid={`button-render-clip-${clip.id}`} onClick={(event) => { event.stopPropagation(); onRender(); }} className={`rounded px-2 py-1 text-[9px] ${exported ? 'bg-[#2e3a1a] text-[#dff078]' : 'bg-[#29253b] text-[#a9a1b9] hover:bg-[#3c3157]'}`}>{exported && exportProgress && exportProgress < 100 ? `${exportProgress}%` : exported ? 'Rendered' : 'Render'}</button>{exported && exportProgress === 100 && <button data-testid={`button-download-clip-${clip.id}`} onClick={(event) => { event.stopPropagation(); onDownload(); }} className="ml-auto rounded p-1 text-[#e4f03b] hover:bg-[#3a401e]"><Download size={13} /></button>}</div></div>
+      <div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div className="truncate text-[11px] font-semibold text-[#ddd9e6]">{clip.title}</div><div className="flex shrink-0 items-center gap-0.5 text-[10px] font-bold text-[#e4f03b]"><Zap size={10} fill="currentColor" />{clip.score}</div></div><div className="studio-mono mt-1 text-[9px] text-[#777186]">{formatTime(clip.start)} — {formatTime(clip.start + clip.length)} <span className="mx-1 text-[#4d485e]">·</span>{clip.length}s</div><div className="mt-2 flex items-center gap-1"><button data-testid={`button-preview-clip-${clip.id}`} onClick={(event) => { event.stopPropagation(); onPreview(); }} className="rounded bg-[#29253b] px-2 py-1 text-[9px] text-[#c9b9f7] hover:bg-[#3c3157]"><Play size={9} className="mr-1 inline" />Preview</button></div></div>
     </div>
-    {exported && exportProgress !== undefined && exportProgress < 100 && <div className="mt-2 h-0.5 overflow-hidden rounded-full bg-[#373248]"><div className="h-full bg-[#e4f03b]" style={{ width: `${exportProgress}%` }} /></div>}
+    <button data-testid={`button-download-clip-${clip.id}`} onClick={(event) => { event.stopPropagation(); onDownload(); }} disabled={exportProgress !== undefined && exportProgress > 0 && exportProgress < 100} className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-[10px] font-bold transition-colors ${exportProgress !== undefined && exportProgress >= 100 ? 'bg-[#2e3a1a] text-[#e4f03b]' : 'bg-[#e4f03b] text-[#17171d] hover:bg-[#f0f76d] disabled:cursor-wait disabled:opacity-90'}`}>
+      {exportProgress !== undefined && exportProgress > 0 && exportProgress < 100 ? <><Activity size={12} className="animate-pulse" />Rendering MP4: {exportProgress}%...</> : exportProgress !== undefined && exportProgress >= 100 ? <><Check size={12} />Download Complete!</> : <>📱 Download MP4 to Gallery</>}
+    </button>
+    {exported && exportProgress !== undefined && exportProgress < 100 && <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#373248]"><div className="h-full rounded-full bg-[#e4f03b] transition-[width] duration-150" style={{ width: `${exportProgress}%` }} /></div>}
   </div>;
 }
 
