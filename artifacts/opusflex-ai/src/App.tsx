@@ -22,7 +22,7 @@ type Word = { text: string; start: number; end: number; color: string };
 type RenderedVideo = { blob: Blob; mimeType: string; filename: string };
 
 const queryClient = new QueryClient();
-const DEMO_DURATION = 187;
+const DEMO_DURATION = 12;
 
 const initialWords: Word[] = [
   { text: 'The', start: 8.2, end: 8.48, color: 'default' },
@@ -37,9 +37,9 @@ const initialWords: Word[] = [
 ];
 
 const seedClips: Clip[] = [
-  { id: 1, title: 'The perfect moment is a myth', start: 8, length: 26, score: 94, color: '#9b76ff', status: 'ready' },
-  { id: 2, title: 'Stop waiting to publish', start: 54, length: 31, score: 87, color: '#e2ef3a', status: 'ready' },
-  { id: 3, title: 'Your first 10 ideas are bad', start: 102, length: 24, score: 81, color: '#69c5ff', status: 'ready' },
+  { id: 1, title: 'The perfect moment is a myth', start: 0, length: 4, score: 94, color: '#9b76ff', status: 'ready' },
+  { id: 2, title: 'Stop waiting to publish', start: 4, length: 4, score: 87, color: '#e2ef3a', status: 'ready' },
+  { id: 3, title: 'Your first 10 ideas are bad', start: 8, length: 4, score: 81, color: '#69c5ff', status: 'ready' },
 ];
 
 function formatTime(seconds: number) {
@@ -86,6 +86,78 @@ function seekVideo(video: HTMLVideoElement, time: number) {
   });
 }
 
+async function createDemoVideo() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 640;
+  canvas.height = 360;
+  const mimeType = getRecordingMimeType();
+  if (!mimeType || !canvas.captureStream) return '';
+
+  const context = canvas.getContext('2d');
+  if (!context) return '';
+
+  const stream = canvas.captureStream(30);
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2_500_000 });
+  const chunks: BlobPart[] = [];
+
+  return new Promise<string>((resolve) => {
+    let frame = 0;
+    const totalFrames = DEMO_DURATION * 30;
+    const draw = () => {
+      const progress = frame / totalFrames;
+      const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#171b31');
+      gradient.addColorStop(0.5, '#554779');
+      gradient.addColorStop(1, '#171c31');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      const speakerX = canvas.width * (0.34 + progress * 0.24);
+      context.fillStyle = 'rgba(137, 109, 208, .28)';
+      context.beginPath();
+      context.ellipse(speakerX, 215, 94, 104, 0, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = '#c69f93';
+      context.beginPath();
+      context.ellipse(speakerX, 135, 59, 48, 0, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = 'rgba(64, 39, 61, .8)';
+      context.fillRect(speakerX - 34, 194, 68, 5);
+      context.fillStyle = '#e4f03b';
+      context.fillRect(44 + progress * 120, 54, 58, 4);
+      context.fillStyle = 'rgba(220, 207, 255, .7)';
+      context.fillRect(42, 34, 94, 4);
+      context.fillStyle = '#f3efff';
+      context.font = '700 18px Inter, sans-serif';
+      context.fillText(progress < 0.45 ? 'CREATOR MINDSET' : 'PUBLISH BEFORE PERFECT', 42, 315);
+      frame += 1;
+    };
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.push(event.data);
+    };
+    recorder.onerror = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      resolve('');
+    };
+    recorder.onstop = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      const blob = new Blob(chunks, { type: mimeType });
+      resolve(URL.createObjectURL(blob));
+    };
+
+    recorder.start(100);
+    draw();
+    const timer = window.setInterval(() => {
+      draw();
+      if (frame >= totalFrames) {
+        window.clearInterval(timer);
+        recorder.stop();
+      }
+    }, 33);
+  });
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -102,8 +174,11 @@ function App() {
 function Studio() {
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const demoUrlRef = useRef('');
+  const userLoadedSourceRef = useRef(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
+  const [sourceDuration, setSourceDuration] = useState(DEMO_DURATION);
   const [dragging, setDragging] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(9.4);
@@ -137,6 +212,29 @@ function Studio() {
   const videoIsLoaded = Boolean(videoUrl);
 
   useEffect(() => {
+    let cancelled = false;
+    void createDemoVideo().then((url) => {
+      if (cancelled || userLoadedSourceRef.current) {
+        if (url) URL.revokeObjectURL(url);
+        return;
+      }
+      if (url) {
+        demoUrlRef.current = url;
+        setVideoUrl(url);
+        setSourceDuration(DEMO_DURATION);
+        setCurrentTime(0);
+        setToast('Demo video is ready — try Generate clips');
+      } else {
+        setToast('Demo preview loaded — browser video recording is unavailable');
+      }
+    });
+    return () => {
+      cancelled = true;
+      if (demoUrlRef.current) URL.revokeObjectURL(demoUrlRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!processing) return;
     const interval = window.setInterval(() => {
       setProgress((current) => {
@@ -144,13 +242,16 @@ function Studio() {
         if (next === 100) {
           window.clearInterval(interval);
           window.setTimeout(() => {
-            const length = durationPreset === 'custom' ? customDuration : durationPreset === 'under15' ? 12 : durationPreset === '15-30' ? 24 : 43;
+            const requestedLength = durationPreset === 'custom' ? customDuration : durationPreset === 'under15' ? 12 : durationPreset === '15-30' ? 24 : 43;
+            const length = Math.max(2, Math.min(requestedLength, Math.max(2, sourceDuration - 0.5)));
             const titles = ['The perfect moment is a myth', 'Stop waiting to publish', 'Your first 10 ideas are bad', 'The audience can feel your doubt', 'Make the boring part visible', 'Consistency beats the algorithm'];
             const colors = ['#9b76ff', '#e2ef3a', '#69c5ff', '#ff8b98', '#e7a65b', '#85ddac'];
+            const maxStart = Math.max(0, sourceDuration - length);
+            const step = clipCount > 1 ? maxStart / (clipCount - 1) : 0;
             const made = Array.from({ length: clipCount }, (_, index) => ({
               id: Date.now() + index,
               title: titles[index % titles.length],
-              start: Math.min(8 + index * 31, DEMO_DURATION - length),
+              start: Math.min(Math.round(index * step * 10) / 10, maxStart),
               length,
               score: Math.max(73, 96 - index * 4),
               color: colors[index % colors.length],
@@ -166,14 +267,26 @@ function Studio() {
       });
     }, 180);
     return () => window.clearInterval(interval);
-  }, [processing, clipCount, durationPreset, customDuration]);
+  }, [processing, clipCount, durationPreset, customDuration, sourceDuration]);
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (videoUrl && video) {
+      if (playing) {
+        void video.play().catch(() => {
+          setPlaying(false);
+          setToast('Tap play again to start the local video');
+        });
+      } else {
+        video.pause();
+      }
+      return;
+    }
     if (!playing) return;
     const timer = window.setInterval(() => {
       setCurrentTime((time) => {
         const next = time + 0.25;
-        if (next >= DEMO_DURATION) {
+        if (next >= sourceDuration) {
           setPlaying(false);
           return 0;
         }
@@ -181,7 +294,31 @@ function Studio() {
       });
     }, 250);
     return () => window.clearInterval(timer);
-  }, [playing]);
+  }, [playing, videoUrl, sourceDuration]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onTimeUpdate = () => setCurrentTime(video.currentTime);
+    const onLoadedMetadata = () => {
+      if (Number.isFinite(video.duration) && video.duration > 0) {
+        setSourceDuration(video.duration);
+        setCurrentTime(Math.min(video.currentTime, video.duration));
+      }
+    };
+    const onEnded = () => {
+      setPlaying(false);
+      setCurrentTime(0);
+    };
+    video.addEventListener('timeupdate', onTimeUpdate);
+    video.addEventListener('loadedmetadata', onLoadedMetadata);
+    video.addEventListener('ended', onEnded);
+    return () => {
+      video.removeEventListener('timeupdate', onTimeUpdate);
+      video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      video.removeEventListener('ended', onEnded);
+    };
+  }, [videoUrl]);
 
   useEffect(() => {
     const wordIndex = words.findIndex((word) => currentTime >= word.start && currentTime <= word.end);
@@ -195,7 +332,7 @@ function Studio() {
   }, [toast]);
 
   useEffect(() => () => {
-    if (videoUrl) window.URL.revokeObjectURL(videoUrl);
+    if (videoUrl && videoUrl !== demoUrlRef.current) window.URL.revokeObjectURL(videoUrl);
   }, [videoUrl]);
 
   function handleFile(file?: File) {
@@ -203,16 +340,50 @@ function Studio() {
       setToast('Choose a video file to load into the edit bay');
       return;
     }
-    if (videoUrl) window.URL.revokeObjectURL(videoUrl);
+    userLoadedSourceRef.current = true;
+    if (videoUrl && videoUrl !== demoUrlRef.current) window.URL.revokeObjectURL(videoUrl);
     const url = window.URL.createObjectURL(file);
     setVideoFile(file);
     setVideoUrl(url);
+    setPlaying(false);
     setCurrentTime(0);
     setToast('Source loaded locally — ready to cut');
   }
 
+  async function loadDemo() {
+    setPlaying(false);
+    const url = demoUrlRef.current || await createDemoVideo();
+    if (!url) {
+      setToast('This browser cannot create the demo video');
+      return;
+    }
+    demoUrlRef.current = url;
+    setVideoFile(null);
+    setVideoUrl(url);
+    setSourceDuration(DEMO_DURATION);
+    setCurrentTime(0);
+    setToast('Creator mindset demo loaded — ready to cut');
+  }
+
   function updateWord(index: number, patch: Partial<Word>) {
     setWords((current) => current.map((word, wordIndex) => wordIndex === index ? { ...word, ...patch } : word));
+  }
+
+  function resyncTranscript() {
+    const transcript = ['The', 'biggest', 'mistake', 'creators', 'make', 'is', 'waiting', 'for', 'perfect.'];
+    const start = Math.min(currentTime, Math.max(0, sourceDuration - 3.6));
+    const wordLength = 0.38;
+    const nextWords = transcript.map((text, index) => ({
+      text,
+      start: Math.round((start + index * wordLength) * 100) / 100,
+      end: Math.round((start + index * wordLength + wordLength - 0.04) * 100) / 100,
+      color: index === 1 ? 'active' : 'default',
+    }));
+    setWords(nextWords);
+    setActiveWord(0);
+    setCurrentTime(start);
+    if (videoRef.current) videoRef.current.currentTime = start;
+    setToast('Transcript timings re-synced locally in this browser');
   }
 
   async function downloadClip(clip: Clip, clipNumber: number) {
@@ -357,19 +528,16 @@ function Studio() {
 
   function downloadAll() {
     const payload = new Blob([clips.map((clip) => `${clip.title} — ${formatTime(clip.start)} — ${clip.length}s`).join('\n')], { type: 'application/zip' });
-    const href = window.URL.createObjectURL(payload);
-    const anchor = document.createElement('a');
-    anchor.href = href;
-    anchor.download = 'opusflex-shorts.zip';
-    anchor.click();
-    window.URL.revokeObjectURL(href);
+    downloadBlob(payload, 'opusflex-shorts.zip');
     setToast('Download All Clips queued as local ZIP');
   }
 
   function seekTimeline(event: React.MouseEvent<HTMLDivElement>) {
     const bounds = event.currentTarget.getBoundingClientRect();
-    const next = ((event.clientX - bounds.left) / bounds.width) * DEMO_DURATION;
-    setCurrentTime(Math.max(0, Math.min(DEMO_DURATION, next)));
+    const next = ((event.clientX - bounds.left) / bounds.width) * sourceDuration;
+    const safeTime = Math.max(0, Math.min(sourceDuration, next));
+    setCurrentTime(safeTime);
+    if (videoRef.current) videoRef.current.currentTime = safeTime;
   }
 
   const captionStyle = useMemo(() => ({
@@ -420,12 +588,12 @@ function Studio() {
               <button data-testid="button-mobile-menu" onClick={() => setMobilePanel(mobilePanel === 'edit' ? 'source' : 'edit')} className="rounded-md p-1 text-[#8a849d] hover:bg-[#27253a] lg:hidden"><Menu size={19} /></button>
               <div>
                 <div className="flex items-center gap-2 text-[13px] font-semibold text-[#e4e1ed]"><span className="h-1.5 w-1.5 rounded-full bg-[#e4f03b]" /> New project</div>
-                <div className="studio-mono mt-0.5 text-[10px] text-[#777388]">{videoFile?.name ?? 'Creator mindset — podcast demo'} <span className="text-[#504d61]">·</span> {formatTime(DEMO_DURATION)}</div>
+                <div className="studio-mono mt-0.5 text-[10px] text-[#777388]">{videoFile?.name ?? 'Creator mindset — podcast demo'} <span className="text-[#504d61]">·</span> {formatTime(sourceDuration)}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <span className="hidden text-[10px] text-[#777388] md:inline">Autosaved just now</span>
-              <button data-testid="button-reset" onClick={() => { setClips(seedClips); setSelectedClipId(1); setCurrentTime(9.4); setToast('Demo project restored'); }} className="rounded-md border border-[#343148] px-2.5 py-1.5 text-[11px] text-[#aaa5ba] hover:border-[#5f4c90] hover:text-[#e6e0fb]"><RotateCcw size={12} className="mr-1.5 inline" />Reset</button>
+              <button data-testid="button-reset" onClick={() => { setClips(seedClips); setSelectedClipId(1); setCurrentTime(0); setExportQueue([]); setExportProgress({}); renderedVideosRef.current = {}; void loadDemo(); }} className="rounded-md border border-[#343148] px-2.5 py-1.5 text-[11px] text-[#aaa5ba] hover:border-[#5f4c90] hover:text-[#e6e0fb]"><RotateCcw size={12} className="mr-1.5 inline" />Reset</button>
             </div>
           </div>
 
@@ -459,15 +627,15 @@ function Studio() {
                 <div className="mt-1 text-[10px] text-[#807b90]">MP4, MOV, WebM · stays on device</div>
                 {videoFile && <div className="mt-3 truncate rounded-md bg-[#12121b] px-2 py-1.5 text-left text-[10px] text-[#b1a9ca]"><FileVideo size={12} className="mr-1 inline text-[#e4f03b]" />{videoFile.name}</div>}
               </div>
-              <button data-testid="button-load-demo" onClick={() => { setVideoFile(null); setVideoUrl(''); setCurrentTime(9.4); setToast('Creator mindset demo loaded'); }} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#342f4b] py-2 text-[11px] font-medium text-[#b0a8c0] hover:border-[#7157ad] hover:text-[#e7defa]"><Sparkles size={13} className="text-[#e4f03b]" />Load instant demo</button>
+              <button data-testid="button-load-demo" onClick={() => { void loadDemo(); }} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#342f4b] py-2 text-[11px] font-medium text-[#b0a8c0] hover:border-[#7157ad] hover:text-[#e7defa]"><Sparkles size={13} className="text-[#e4f03b]" />Load instant demo</button>
 
               <div className="mt-6">
-                <SectionLabel label="Source preview" trailing={videoIsLoaded ? 'LOCAL FILE' : 'DEMO SOURCE'} />
+                <SectionLabel label="Source preview" trailing={videoFile ? 'LOCAL FILE' : 'DEMO VIDEO'} />
                 <div className="relative mt-2 aspect-video overflow-hidden rounded-lg border border-[#38334d] bg-[#202237]">
-                  {videoIsLoaded ? <video ref={videoRef} src={videoUrl} className="h-full w-full object-cover" muted playsInline /> : <DemoFrame compact />}
+                  {videoIsLoaded ? <video src={videoUrl} className="h-full w-full object-cover" muted playsInline preload="auto" /> : <DemoFrame compact />}
                   <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-[#101018]/90 to-transparent px-2 pb-2 pt-5">
                     <button data-testid="button-source-play" onClick={() => setPlaying((state) => !state)} className="grid h-7 w-7 place-items-center rounded-full bg-[#e4f03b] text-[#17171d]">{playing ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}</button>
-                    <span className="studio-mono text-[10px] text-[#d8d5df]">{formatTime(currentTime)} / {formatTime(DEMO_DURATION)}</span>
+                    <span className="studio-mono text-[10px] text-[#d8d5df]">{formatTime(currentTime)} / {formatTime(sourceDuration)}</span>
                   </div>
                 </div>
               </div>
@@ -518,7 +686,7 @@ function Studio() {
                 </div>
                 <div className="grid min-h-[390px] grid-cols-[minmax(0,1fr)_150px] gap-3 sm:grid-cols-[minmax(0,1fr)_190px]">
                   <div className="relative overflow-hidden rounded-xl border border-[#353149] bg-[#1b1c2c] shadow-[inset_0_0_60px_rgba(89,72,156,.08)]">
-                    <DemoFrame />
+                    {videoUrl ? <video ref={videoRef} src={videoUrl} className="h-full w-full object-cover" muted playsInline preload="auto" /> : <DemoFrame />}
                     <div className="scan-line absolute left-0 right-0 top-0 h-[28%] border-b border-[#c1a5ff]/40 bg-gradient-to-b from-transparent to-[#b291ff]/[.05]" />
                     <div className="pointer-events-none absolute inset-[13%_27%] border border-[#e4f03b] shadow-[0_0_0_999px_rgba(5,5,12,.17)]">
                       <span className="absolute -left-px -top-px h-3 w-3 border-l-2 border-t-2 border-[#e4f03b]" /><span className="absolute -right-px -top-px h-3 w-3 border-r-2 border-t-2 border-[#e4f03b]" /><span className="absolute -bottom-px -left-px h-3 w-3 border-b-2 border-l-2 border-[#e4f03b]" /><span className="absolute -bottom-px -right-px h-3 w-3 border-b-2 border-r-2 border-[#e4f03b]" />
@@ -541,15 +709,15 @@ function Studio() {
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 border-b border-[#292638] pb-3">
                   <button data-testid="button-playback" onClick={() => setPlaying((state) => !state)} className="grid h-8 w-8 place-items-center rounded-full bg-[#e4f03b] text-[#191a1b] hover:bg-[#f0f76d]">{playing ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}</button>
-                  <span className="studio-mono mr-1 text-[11px] text-[#c4bfd0]">{formatTime(currentTime)} <span className="text-[#625d72]">/</span> {formatTime(DEMO_DURATION)}</span>
-                  <div data-testid="timeline-scrubber" onClick={seekTimeline} className="relative h-1.5 min-w-[120px] flex-1 cursor-pointer rounded-full bg-[#302c44]"><div className="h-full rounded-full bg-[#a682ff]" style={{ width: `${(currentTime / DEMO_DURATION) * 100}%` }} /><div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-[#e4f03b] bg-[#171622]" style={{ left: `calc(${(currentTime / DEMO_DURATION) * 100}% - 6px)` }} /></div>
+                  <span className="studio-mono mr-1 text-[11px] text-[#c4bfd0]">{formatTime(currentTime)} <span className="text-[#625d72]">/</span> {formatTime(sourceDuration)}</span>
+                  <div data-testid="timeline-scrubber" onClick={seekTimeline} className="relative h-1.5 min-w-[120px] flex-1 cursor-pointer rounded-full bg-[#302c44]"><div className="h-full rounded-full bg-[#a682ff]" style={{ width: `${(currentTime / sourceDuration) * 100}%` }} /><div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-[#e4f03b] bg-[#171622]" style={{ left: `calc(${(currentTime / sourceDuration) * 100}% - 6px)` }} /></div>
                   <button data-testid="button-speaker-focus" onClick={() => setSpeakerFocus((state) => !state)} className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-[10px] ${speakerFocus ? 'border-[#a37dff] bg-[#2d2446] text-[#d8caff]' : 'border-[#332f43] text-[#777287]'}`}><Target size={12} />Focus {speakerFocus ? 'ON' : 'OFF'}</button>
                   <button data-testid="button-motion-zoom" onClick={() => setMotionZoom((state) => !state)} className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-[10px] ${motionZoom ? 'border-[#a37dff] bg-[#2d2446] text-[#d8caff]' : 'border-[#332f43] text-[#777287]'}`}><ZoomIn size={12} />Zoom {motionZoom ? 'ON' : 'OFF'}</button>
                   <button data-testid="button-split-screen" onClick={() => setSplitScreen((state) => !state)} className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-[10px] ${splitScreen ? 'border-[#e4f03b] bg-[#303516] text-[#e7ef99]' : 'border-[#332f43] text-[#777287]'}`}><Split size={12} />Split</button>
                 </div>
 
                 <div className="mt-4">
-                  <div className="mb-2 flex items-center justify-between"><SectionLabel label="Transcript / word timing" /><button data-testid="button-retranscribe" onClick={() => setToast('Transcript is already synced to the demo source')} className="text-[10px] text-[#9f87dc] hover:text-[#cbbbff]"><AudioWaveform size={12} className="mr-1 inline" />Re-sync</button></div>
+                   <div className="mb-2 flex items-center justify-between"><SectionLabel label="Transcript / word timing" /><button data-testid="button-retranscribe" onClick={resyncTranscript} className="text-[10px] text-[#9f87dc] hover:text-[#cbbbff]"><AudioWaveform size={12} className="mr-1 inline" />Re-sync</button></div>
                   <div data-testid="transcript-editor" className="rounded-lg border border-[#332f45] bg-[#181722] p-3">
                     <div className="flex flex-wrap gap-x-1.5 gap-y-2">
                       {words.map((word, index) => <button data-testid={`button-transcript-word-${index}`} key={`${word.text}-${index}`} onClick={() => { setActiveWord(index); setCurrentTime(word.start); }} className={`rounded px-1.5 py-1 text-[11px] transition-colors ${activeWord === index ? 'bg-[#e4f03b] font-bold text-[#17171d]' : word.color === 'active' ? 'bg-[#33284b] text-[#cbb9ff]' : 'text-[#bdb7c8] hover:bg-[#29263b] hover:text-white'}`}>{word.text}</button>)}
@@ -586,7 +754,7 @@ function Studio() {
               <div className="my-5 h-px bg-[#2d2a3c]" />
               <div className="flex items-center justify-between"><SectionLabel label="Generated clips" trailing={`${clips.length} READY`} /><button data-testid="button-sort-clips" onClick={() => setClips((current) => [...current].sort((a, b) => b.score - a.score))} className="text-[10px] text-[#8d82ad] hover:text-[#c8b7f9]">Sort score <ChevronDown size={12} className="inline" /></button></div>
               <div className="mt-2 space-y-2">
-                {clips.map((clip, index) => <ClipCard key={clip.id} clip={clip} index={index} selected={clip.id === selectedClipId} exported={exportQueue.includes(clip.id)} exportProgress={exportProgress[clip.id]} onSelect={() => { setSelectedClipId(clip.id); setCurrentTime(clip.start); }} onPreview={() => { setSelectedClipId(clip.id); setCurrentTime(clip.start); setPlaying(true); setToast(`Previewing “${clip.title}”`); }} onDownload={() => { void downloadClip(clip, index + 1); }} />)}
+                {clips.map((clip, index) => <ClipCard key={clip.id} clip={clip} index={index} selected={clip.id === selectedClipId} exported={exportQueue.includes(clip.id)} exportProgress={exportProgress[clip.id]} onSelect={() => { setSelectedClipId(clip.id); setCurrentTime(clip.start); if (videoRef.current) videoRef.current.currentTime = clip.start; }} onPreview={() => { setSelectedClipId(clip.id); setCurrentTime(clip.start); if (videoRef.current) videoRef.current.currentTime = clip.start; setPlaying(true); setToast(`Previewing “${clip.title}”`); }} onDownload={() => { void downloadClip(clip, index + 1); }} />)}
               </div>
               <div className="mt-4 rounded-lg border border-[#37324a] bg-[#1b1929] p-3">
                 <div className="flex items-center justify-between"><div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#ddd8e8]"><Gauge size={14} className="text-[#e4f03b]" /> Export queue</div><span className="studio-mono text-[10px] text-[#777286]">{exportQueue.length}/{clips.length}</span></div>
