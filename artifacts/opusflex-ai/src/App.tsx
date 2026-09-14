@@ -100,14 +100,17 @@ function waitForVideoEvent(video: HTMLVideoElement, eventName: string) {
 
 function createDemoVideo() {
   const canvas = document.createElement('canvas');
-  canvas.width = 640;
-  canvas.height = 360;
+  const demoWidth = 640;
+  const demoHeight = 360;
+  canvas.width = 1280;
+  canvas.height = 720;
   const mimeType = getRecordingMimeType();
   const context = canvas.getContext('2d');
   if (!mimeType || !context || !canvas.captureStream) return Promise.resolve('');
+  context.scale(canvas.width / demoWidth, canvas.height / demoHeight);
 
   const stream = canvas.captureStream(30);
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2_500_000 });
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6_000_000 });
   const chunks: BlobPart[] = [];
 
   return new Promise<string>((resolve) => {
@@ -115,14 +118,14 @@ function createDemoVideo() {
     const totalFrames = DEMO_DURATION * 30;
     const draw = () => {
       const progress = frame / totalFrames;
-      const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+      const gradient = context.createLinearGradient(0, 0, demoWidth, demoHeight);
       gradient.addColorStop(0, '#171b31');
       gradient.addColorStop(0.5, '#554779');
       gradient.addColorStop(1, '#171c31');
       context.fillStyle = gradient;
-      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillRect(0, 0, demoWidth, demoHeight);
 
-      const cardX = canvas.width * (0.22 + progress * 0.18);
+      const cardX = demoWidth * (0.22 + progress * 0.18);
       context.fillStyle = 'rgba(137, 109, 208, .3)';
       context.fillRect(cardX, 96, 230, 142);
       context.fillStyle = 'rgba(228, 240, 59, .9)';
@@ -411,10 +414,14 @@ function Studio() {
     }
 
     const canvas = document.createElement('canvas');
-    const dimensions = aspect === '9:16' ? [1080, 1920] : aspect === '1:1' ? [1080, 1080] : [1920, 1080];
+    const targetDimensions = aspect === '9:16' ? [1080, 1920] : aspect === '1:1' ? [1080, 1080] : [1920, 1080];
+    const sourceLongEdge = Math.max(video.videoWidth || targetDimensions[0], video.videoHeight || targetDimensions[1]);
+    const targetLongEdge = Math.max(targetDimensions[0], targetDimensions[1]);
+    const outputScale = Math.min(1, sourceLongEdge / targetLongEdge);
+    const dimensions = targetDimensions.map((dimension) => Math.max(2, Math.floor((dimension * outputScale) / 2) * 2));
     canvas.width = dimensions[0];
     canvas.height = dimensions[1];
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext('2d', { alpha: false, desynchronized: true });
     if (!context || !canvas.captureStream) {
       setToast('Video export is not supported in this browser');
       return;
@@ -435,8 +442,12 @@ function Studio() {
     const start = Math.min(clip.start, Math.max(0, duration - 0.1));
     const length = Math.max(0.8, Math.min(clip.length, duration - start));
     const stream = canvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+    const pixels = canvas.width * canvas.height;
+    const videoBitsPerSecond = pixels >= 1_500_000 ? 14_000_000 : pixels >= 800_000 ? 10_000_000 : 7_000_000;
+    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond });
     const chunks: BlobPart[] = [];
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
     const finished = new Promise<Blob>((resolve, reject) => {
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) chunks.push(event.data);
@@ -483,20 +494,45 @@ function Studio() {
       video.currentTime = start;
       await waitForVideoEvent(video, 'seeked');
       await video.play();
-      recorder.start(100);
+      recorder.start(250);
       const startedAt = performance.now();
+      const frameVideo = video as unknown as {
+        requestVideoFrameCallback?: (callback: (now: number) => void) => number;
+        cancelVideoFrameCallback?: (handle: number) => void;
+      };
+      const requestFrame = frameVideo.requestVideoFrameCallback;
+      const cancelFrame = frameVideo.cancelVideoFrameCallback;
+      const hasVideoFrameCallback = typeof requestFrame === 'function';
+      const scheduleFrame = (callback: (now: number) => void) => requestFrame
+        ? requestFrame.call(frameVideo, callback)
+        : window.requestAnimationFrame(callback);
+      let frameRequest = 0;
+      let lastFallbackFrame = 0;
+      let lastProgressUpdate = 0;
       await new Promise<void>((resolve) => {
-        const timer = window.setInterval(() => {
-          const elapsed = Math.min(length, (performance.now() - startedAt) / 1000);
-          drawFrame(elapsed);
-          setExportProgress((current) => ({ ...current, [clip.id]: Math.min(96, Math.max(2, Math.round((elapsed / length) * 96))) }));
-          if (elapsed >= length) {
-            window.clearInterval(timer);
-            resolve();
+        const renderFrame = (now: number) => {
+          if (!hasVideoFrameCallback && now - lastFallbackFrame < 30) {
+            frameRequest = window.requestAnimationFrame(renderFrame);
+            return;
           }
-        }, 33);
+          lastFallbackFrame = now;
+          const elapsed = Math.min(length, (now - startedAt) / 1000);
+          drawFrame(elapsed);
+          if (now - lastProgressUpdate > 180 || elapsed >= length) {
+            lastProgressUpdate = now;
+            setExportProgress((current) => ({ ...current, [clip.id]: Math.min(96, Math.max(2, Math.round((elapsed / length) * 96))) }));
+          }
+          if (elapsed >= length) {
+            if (hasVideoFrameCallback && cancelFrame) cancelFrame.call(frameVideo, frameRequest);
+            resolve();
+            return;
+          }
+          frameRequest = scheduleFrame(renderFrame);
+        };
+        frameRequest = scheduleFrame(renderFrame);
       });
       drawFrame(length);
+      video.pause();
       recorder.stop();
       const blob = await finished;
       const extension = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
@@ -525,8 +561,8 @@ function Studio() {
   const progressFor = (clip: Clip) => exportProgress[clip.id];
 
   return (
-    <div className="studio-noise min-h-[100dvh] bg-[#11111b] text-[#e5e4ed]">
-      <header className="flex h-[68px] items-center justify-between border-b border-[#29273a] bg-[#151521] px-5 lg:px-8">
+    <div className="studio-noise min-h-[100dvh] overflow-x-hidden bg-[#11111b] text-[#e5e4ed]">
+      <header className="flex h-[68px] items-center justify-between border-b border-[#29273a] bg-[#151521] px-3 sm:px-5 lg:px-8">
         <div className="flex items-center gap-3">
           <div className="grid h-9 w-9 place-items-center rounded-[10px] bg-[#e4f03b] text-[#13131c]"><Sparkles size={18} strokeWidth={3} /></div>
           <div>
@@ -540,8 +576,8 @@ function Studio() {
         <button data-testid="button-reset" onClick={resetWorkspace} className="rounded-md border border-[#343148] px-3 py-2 text-[11px] text-[#aaa5ba] hover:border-[#75659a] hover:text-white"><RotateCcw size={13} className="mr-1.5 inline" />New video</button>
       </header>
 
-      <main className="mx-auto grid max-w-[1500px] gap-px bg-[#29273a] xl:grid-cols-[290px_minmax(0,1fr)_340px]">
-        <aside className="bg-[#161620] p-5">
+      <main className="mx-auto grid max-w-[1500px] gap-px bg-[#29273a] lg:grid-cols-[260px_minmax(0,1fr)_310px] xl:grid-cols-[290px_minmax(0,1fr)_340px]">
+        <aside className="bg-[#161620] p-4 sm:p-5">
           <PanelTitle label="1 / Upload" title="Add your video" />
           <div
             data-testid="dropzone-video"
@@ -592,7 +628,7 @@ function Studio() {
           {processing && <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#28263a]"><div className="h-full rounded-full bg-[#e4f03b] transition-all" style={{ width: `${progress}%` }} /></div>}
         </aside>
 
-        <section className="min-w-0 bg-[#11111a] p-5 lg:p-7">
+        <section className="min-w-0 bg-[#11111a] p-4 sm:p-5 lg:p-7">
           <div className="mx-auto max-w-[820px]">
             <div className="mb-4 flex items-center justify-between">
               <div><div className="studio-mono text-[9px] uppercase tracking-[.15em] text-[#82789d]">Preview</div><h1 className="studio-display mt-1 text-[20px] font-semibold text-white">{videoFile?.name ?? 'Creator mindset demo'}</h1></div>
@@ -615,7 +651,7 @@ function Studio() {
           </div>
         </section>
 
-        <aside className="bg-[#161620] p-5">
+        <aside className="bg-[#161620] p-4 sm:p-5">
           <div className="flex items-end justify-between"><PanelTitle label="Recent videos" title="Your video history" /><span className="studio-mono text-[10px] text-[#777286]">{recentClips.length} saved</span></div>
           <p className="mt-2 text-[10px] leading-relaxed text-[#777186]">New videos stay here until you delete them.</p>
           <div className="mt-5 space-y-2.5">
