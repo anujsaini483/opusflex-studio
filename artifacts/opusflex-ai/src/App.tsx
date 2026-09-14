@@ -708,7 +708,7 @@ function Studio() {
     <div className="studio-noise min-h-[100dvh] overflow-x-hidden bg-[#11111b] text-[#e5e4ed]">
       <header className="flex h-[68px] items-center justify-between border-b border-[#29273a] bg-[#151521] px-3 sm:px-5 lg:px-8">
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-[10px] bg-[#e4f03b] text-[#13131c]"><Sparkles size={18} strokeWidth={3} /></div>
+          <div className="grid h-9 w-9 place-items-center rounded-[10px] bg-white text-black">
           <div>
             <div className="studio-display text-[17px] font-bold tracking-tight text-[#f4f2fb]">opus<span className="text-[#ab88ff]">flex</span> <span className="text-[#e4f03b]">AI</span></div>
             <div className="studio-mono text-[9px] uppercase tracking-[.18em] text-[#77738b]">simple video maker</div>
@@ -770,7 +770,7 @@ function Studio() {
             </div>}
           </div>
 
-          <button data-testid="button-generate-clips" onClick={generateClips} disabled={processing || !videoUrl || sourceDuration <= 0} className="mt-7 flex w-full items-center justify-center gap-2 rounded-lg bg-[#e4f03b] py-3 text-[12px] font-bold text-[#18191a] hover:bg-[#f0f76d] disabled:cursor-not-allowed disabled:opacity-50">{processing ? <><Activity size={15} className="animate-pulse" />Analyzing {progress}%</> : <><WandSparkles size={15} />Make {clipCount} videos</>}</button>
+          <button data-testid="button-playback" onClick={() => setPlaying((value) => !value)} className="grid h-9 w-9 place-items-center rounded-full bg-white text-black">
           {processing && <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#28263a]"><div className="h-full rounded-full bg-[#e4f03b] transition-all" style={{ width: `${progress}%` }} /></div>}
         </aside>
 
@@ -785,7 +785,7 @@ function Studio() {
               {showCaption && getCaptionLine(currentTime) && <div className={`pointer-events-none absolute left-1/2 w-[86%] -translate-x-1/2 text-center ${captionPosition === 'top' ? 'top-[12%]' : captionPosition === 'center' ? 'top-1/2 -translate-y-1/2' : 'bottom-[10%]'}`}><span className="rounded-lg bg-black/60 px-3 py-2 text-[clamp(16px,3vw,30px)] font-extrabold text-white" style={{ color: captionColor, textShadow: '0 2px 4px rgba(0,0,0,.9)' }}>{getCaptionLine(currentTime)}</span></div>}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button data-testid="button-playback" onClick={() => setPlaying((value) => !value)} className="grid h-9 w-9 place-items-center rounded-full bg-[#e4f03b] text-[#17171d]">{playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}</button>
+              <button data-testid="button-playback" onClick={() => setPlaying((value) => !value)} className="grid h-9 w-9 place-items-center rounded-full bg-white text-black">
               <span className="studio-mono text-[11px] text-[#c4bfd0]">{formatTime(currentTime)} / {formatTime(sourceDuration)}</span>
               <div data-testid="timeline-scrubber" onClick={seek} className="relative h-1.5 min-w-[180px] flex-1 cursor-pointer rounded-full bg-[#302c44]"><div className="h-full rounded-full bg-[#a682ff]" style={{ width: `${sourceDuration ? (currentTime / sourceDuration) * 100 : 0}%` }} /><div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-[#e4f03b] bg-[#171622]" style={{ left: `calc(${sourceDuration ? (currentTime / sourceDuration) * 100 : 0}% - 6px)` }} /></div>
             </div>
@@ -810,7 +810,7 @@ function Studio() {
                     <div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="truncate text-[11px] font-semibold text-[#ddd9e6]">{clip.title}</div><div className="studio-mono mt-1 truncate text-[9px] text-[#777186]">{formatTime(clip.start)} – {formatTime(clip.start + clip.length)} · {clip.sourceName}</div></div><span className="shrink-0 text-[10px] font-bold text-[#e4f03b]">{clip.score}%</span></div>
                   </button>
                   <div className="mt-3 flex gap-2">
-                    <button data-testid={`button-export-${clip.id}`} onClick={() => { void downloadClip(clip, index + 1); }} disabled={exported !== undefined && exported > 0 && exported < 100} className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-[10px] font-bold ${exported !== undefined && exported >= 100 ? 'bg-[#2e3a1a] text-[#e4f03b]' : 'bg-[#e4f03b] text-[#17171d] disabled:opacity-80'}`}>{exported !== undefined && exported > 0 && exported < 100 ? <><Loader2 size={12} className="animate-spin" />Exporting {exported}%</> : exported !== undefined && exported >= 100 ? <><Check size={12} />Exported</> : <><Download size={12} />Export MP4</>}</button>
+                    <button data-testid={`button-export-${clip.id}`} onClick={() => { void downloadClip(clip, index + 1); }} className="grid h-8 w-8 place-items-center rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-80">
                     <button data-testid={`button-delete-${clip.id}`} onClick={() => deleteClip(clip)} className="grid w-9 place-items-center rounded-md border border-[#3b354b] text-[#93899f] hover:border-[#ff7f8a] hover:text-[#ff9aa1]"><Trash2 size={14} /></button>
                   </div>
                   {exported !== undefined && exported > 0 && exported < 100 && <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#373248]"><div className="h-full rounded-full bg-[#e4f03b] transition-[width]" style={{ width: `${exported}%` }} /></div>}
