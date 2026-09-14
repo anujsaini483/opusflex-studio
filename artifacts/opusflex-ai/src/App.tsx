@@ -103,6 +103,18 @@ function waitForVideoEvent(video: HTMLVideoElement, eventName: string) {
   });
 }
 
+async function ensureVideoReady(video: HTMLVideoElement) {
+  if (video.readyState < HTMLMediaElement.HAVE_METADATA || !Number.isFinite(video.duration) || video.duration <= 0) {
+    await waitForVideoEvent(video, 'loadedmetadata');
+  }
+  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+    await waitForVideoEvent(video, 'canplay');
+  }
+  const duration = Number.isFinite(video.duration) ? video.duration : 0;
+  if (duration <= 0) throw new Error('video metadata is unavailable');
+  return duration;
+}
+
 function getVideoCaptureStream(video: HTMLVideoElement) {
   const source = video as unknown as {
     captureStream?: () => MediaStream;
@@ -525,14 +537,20 @@ function Studio() {
       video.volume = 0;
       video.playsInline = true;
       video.src = sourceUrl;
-      await waitForVideoEvent(video, 'loadedmetadata');
     }
 
+    const loadedDuration = await ensureVideoReady(video);
     const oldTime = video.currentTime;
     const oldPlaying = playing;
-    const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : sourceDuration;
-    const start = Math.min(clip.start, Math.max(0, duration - 0.1));
-    const length = Math.max(0.8, Math.min(clip.length, duration - start));
+    const duration = loadedDuration || sourceDuration;
+    const start = Math.max(0, Math.min(clip.start, Math.max(0, duration - 0.05)));
+    const availableLength = Math.max(0, duration - start);
+    if (availableLength + 0.05 < clip.length) {
+      setExportProgress((current) => ({ ...current, [clip.id]: 0 }));
+      setToast(`This source has only ${formatTime(availableLength)} left from the selected start`);
+      return;
+    }
+    const length = clip.length;
     let canvasStream: MediaStream | null = null;
     let sourceStream: MediaStream | null = null;
     let stream: MediaStream | null = null;
@@ -752,7 +770,7 @@ function Studio() {
             </div>}
           </div>
 
-          <button data-testid="button-generate-clips" onClick={generateClips} disabled={processing || !videoUrl} className="mt-7 flex w-full items-center justify-center gap-2 rounded-lg bg-[#e4f03b] py-3 text-[12px] font-bold text-[#18191a] hover:bg-[#f0f76d] disabled:cursor-not-allowed disabled:opacity-50">{processing ? <><Activity size={15} className="animate-pulse" />Analyzing {progress}%</> : <><WandSparkles size={15} />Make {clipCount} videos</>}</button>
+          <button data-testid="button-generate-clips" onClick={generateClips} disabled={processing || !videoUrl || sourceDuration <= 0} className="mt-7 flex w-full items-center justify-center gap-2 rounded-lg bg-[#e4f03b] py-3 text-[12px] font-bold text-[#18191a] hover:bg-[#f0f76d] disabled:cursor-not-allowed disabled:opacity-50">{processing ? <><Activity size={15} className="animate-pulse" />Analyzing {progress}%</> : <><WandSparkles size={15} />Make {clipCount} videos</>}</button>
           {processing && <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#28263a]"><div className="h-full rounded-full bg-[#e4f03b] transition-all" style={{ width: `${progress}%` }} /></div>}
         </aside>
 
@@ -763,7 +781,7 @@ function Studio() {
               <div className="rounded-full border border-[#343148] px-3 py-1.5 text-[10px] text-[#8d879b]">Frame fills output</div>
             </div>
             <div className="mx-auto w-full max-w-[720px] overflow-hidden rounded-2xl border border-[#353149] bg-[#0c0d15] shadow-2xl" style={{ aspectRatio: previewRatio }}>
-              {videoUrl ? <video ref={videoRef} src={videoUrl} className="h-full w-full object-cover" muted playsInline preload="auto" /> : <DemoPlaceholder />}
+              {videoUrl ? <video ref={videoRef} src={videoUrl} onLoadedMetadata={(event) => { const duration = event.currentTarget.duration; if (Number.isFinite(duration) && duration > 0) setSourceDuration(duration); }} className="h-full w-full object-cover" muted playsInline preload="auto" /> : <DemoPlaceholder />}
               {showCaption && getCaptionLine(currentTime) && <div className={`pointer-events-none absolute left-1/2 w-[86%] -translate-x-1/2 text-center ${captionPosition === 'top' ? 'top-[12%]' : captionPosition === 'center' ? 'top-1/2 -translate-y-1/2' : 'bottom-[10%]'}`}><span className="rounded-lg bg-black/60 px-3 py-2 text-[clamp(16px,3vw,30px)] font-extrabold text-white" style={{ color: captionColor, textShadow: '0 2px 4px rgba(0,0,0,.9)' }}>{getCaptionLine(currentTime)}</span></div>}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
