@@ -42,42 +42,42 @@
 }
 
 :root {
-  --background: 240 10% 4%;
-  --foreground: 0 0% 98%;
-  --border: 240 6% 15%;
-  --input: 240 6% 18%;
-  --ring: 0 0% 100%;
-  --card: 240 6% 9%;
-  --card-foreground: 0 0% 98%;
-  --card-border: 240 6% 15%;
-  --popover: 240 6% 9%;
-  --popover-foreground: 0 0% 98%;
-  --popover-border: 240 6% 15%;
-  --primary: 0 0% 100%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 240 6% 15%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 6% 12%;
-  --muted-foreground: 240 5% 65%;
-  --accent: 0 0% 100%;
-  --accent-foreground: 0 0% 0%;
-  --destructive: 1 80% 64%;
-  --destructive-foreground: 0 0% 98%;
-  --sidebar: 240 10% 4%;
-  --sidebar-foreground: 0 0% 98%;
-  --sidebar-border: 240 6% 15%;
-  --sidebar-primary: 0 0% 100%;
-  --sidebar-primary-foreground: 0 0% 0%;
-  --sidebar-accent: 240 6% 15%;
-  --sidebar-accent-foreground: 0 0% 98%;
+  --background: 0 0% 100%;          /* Pure White Background */
+  --foreground: 0 0% 9%;            /* Dark Black Text */
+  --border: 0 0% 82%;               /* Clean Light Gray Border */
+  --input: 0 0% 94%;
+  --ring: 0 0% 0%;
+  --card: 0 0% 100%;                /* White Cards */
+  --card-foreground: 0 0% 9%;
+  --card-border: 0 0% 82%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 9%;
+  --popover-border: 0 0% 82%;
+  --primary: 0 0% 0%;               /* Solid Black Buttons */
+  --primary-foreground: 0 0% 100%;  /* White Text on Buttons */
+  --secondary: 0 0% 92%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 0 0% 90%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --sidebar: 0 0% 98%;
+  --sidebar-foreground: 0 0% 9%;
+  --sidebar-border: 0 0% 82%;
+  --sidebar-primary: 0 0% 0%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 92%;
+  --sidebar-accent-foreground: 0 0% 9%;
   --app-font-sans: 'DM Sans', sans-serif;
   --app-font-mono: 'DM Mono', monospace;
   --radius: 0.55rem;
-  --elevate-1: rgba(255,255,255,.035);
-  --elevate-2: rgba(255,255,255,.07);
+  --elevate-1: rgba(0,0,0,.03);
+  --elevate-2: rgba(0,0,0,.06);
 }
 
-.dark { color-scheme: dark; }
+.dark { color-scheme: light; }
 
 @layer base {
   * { @apply border-border; }
@@ -94,16 +94,16 @@
   .studio-display { font-family: 'Space Grotesk', sans-serif; }
   .studio-mono { font-family: 'DM Mono', monospace; }
   .glass-panel {
-    background: linear-gradient(135deg, rgba(20,20,20,.86), rgba(10,10,10,.92));
-    border: 1px solid rgba(255,255,255,.14);
-    box-shadow: 0 16px 45px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+    background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(248,248,250,.98));
+    border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 12px 35px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,1);
     backdrop-filter: blur(16px);
   }
-  .violet-line { background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent); }
-  .text-gradient { background: linear-gradient(100deg,#ffffff 8%,#a1a1aa 58%,#ffffff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .violet-line { background: linear-gradient(90deg, transparent, rgba(0,0,0,.2), transparent); }
+  .text-gradient { background: linear-gradient(100deg,#000000 8%,#52525b 58%,#000000); -webkit-background-clip:text; background-clip:text; color:transparent; }
 }
 
-* { scrollbar-width: thin; scrollbar-color: #27272a transparent; }
+* { scrollbar-width: thin; scrollbar-color: #d4d4d8 transparent; }
 button { transition: transform .18s ease, background-color .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease; }
 button:active { transform: translateY(1px) scale(.985); }
 button:disabled { cursor: not-allowed; opacity: .5; }
@@ -113,7 +113,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   position: fixed;
   inset: 0;
   z-index: 80;
-  opacity: .025;
+  opacity: .015;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
 }
 .pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
