@@ -167,27 +167,27 @@ function createDemoVideo() {
     const draw = () => {
       const progress = frame / totalFrames;
       const gradient = context.createLinearGradient(0, 0, demoWidth, demoHeight);
-      gradient.addColorStop(0, '#171b31');
-      gradient.addColorStop(0.5, '#554779');
-      gradient.addColorStop(1, '#171c31');
+      gradient.addColorStop(0, '#f4f4f5');
+      gradient.addColorStop(0.5, '#e4e4e7');
+      gradient.addColorStop(1, '#f4f4f5');
       context.fillStyle = gradient;
       context.fillRect(0, 0, demoWidth, demoHeight);
 
       const cardX = demoWidth * (0.22 + progress * 0.18);
-      context.fillStyle = 'rgba(137, 109, 208, .3)';
+      context.fillStyle = 'rgba(0, 0, 0, .06)';
       context.fillRect(cardX, 96, 230, 142);
-      context.fillStyle = 'rgba(228, 240, 59, .9)';
+      context.fillStyle = 'rgba(0, 0, 0, .8)';
       context.fillRect(cardX + 26, 130, 88, 6);
-      context.fillStyle = 'rgba(243, 239, 255, .55)';
+      context.fillStyle = 'rgba(0, 0, 0, .4)';
       context.fillRect(cardX + 26, 154, 142, 4);
       context.fillRect(cardX + 26, 174, 112, 4);
-      context.fillStyle = 'rgba(64, 39, 61, .8)';
+      context.fillStyle = 'rgba(0, 0, 0, .7)';
       context.fillRect(cardX + 26, 204, 54 + progress * 90, 5);
-      context.fillStyle = '#e4f03b';
+      context.fillStyle = '#000000';
       context.fillRect(44 + progress * 120, 54, 58, 4);
-      context.fillStyle = 'rgba(220, 207, 255, .7)';
+      context.fillStyle = 'rgba(0, 0, 0, .5)';
       context.fillRect(42, 34, 94, 4);
-      context.fillStyle = '#f3efff';
+      context.fillStyle = '#000000';
       context.font = '700 18px Inter, sans-serif';
       context.fillText(progress < 0.45 ? 'CREATOR MINDSET' : 'PUBLISH BEFORE PERFECT', 42, 315);
       frame += 1;
@@ -255,7 +255,7 @@ function Studio() {
   const [captionText, setCaptionText] = useState('Make the boring part visible');
   const [captionWords, setCaptionWords] = useState<CaptionWord[]>([]);
   const [captionPosition, setCaptionPosition] = useState<CaptionPosition>('bottom');
-  const [captionColor, setCaptionColor] = useState('#E4F03B');
+  const [captionColor, setCaptionColor] = useState('#000000');
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [recentClips, setRecentClips] = useState<Clip[]>(readRecentClips);
@@ -585,7 +585,7 @@ function Studio() {
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.lineWidth = Math.max(5, height / 260);
-        context.strokeStyle = 'rgba(0,0,0,.82)';
+        context.strokeStyle = 'rgba(255,255,255,.9)';
         const maxTextWidth = width * 0.84;
         const captionLines: string[] = [];
         let line = '';
@@ -705,23 +705,23 @@ function Studio() {
   const progressFor = (clip: Clip) => exportProgress[clip.id];
 
   return (
-    <div className="studio-noise min-h-[100dvh] overflow-x-hidden bg-[#11111b] text-[#e5e4ed]">
-      <header className="flex h-[68px] items-center justify-between border-b border-[#29273a] bg-[#151521] px-3 sm:px-5 lg:px-8">
+    <div className="studio-noise min-h-[100dvh] overflow-x-hidden bg-white text-zinc-900">
+      <header className="flex h-[68px] items-center justify-between border-b border-zinc-200 bg-zinc-50 px-3 sm:px-5 lg:px-8">
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-[10px] bg-white text-black"><Sparkles size={18} /></div>
+          <div className="grid h-9 w-9 place-items-center rounded-[10px] bg-black text-white"><Sparkles size={18} /></div>
           <div>
-            <div className="studio-display text-[17px] font-bold tracking-tight text-[#f4f2fb]">opus<span className="text-[#ab88ff]">flex</span> <span className="text-[#e4f03b]">AI</span></div>
-            <div className="studio-mono text-[9px] uppercase tracking-[.18em] text-[#77738b]">simple video maker</div>
+            <div className="studio-display text-[17px] font-bold tracking-tight text-zinc-900">opus<span className="text-zinc-500">flex</span> <span className="text-black font-extrabold">AI</span></div>
+            <div className="studio-mono text-[9px] uppercase tracking-[.18em] text-zinc-500">simple video maker</div>
           </div>
         </div>
-        <div className="hidden rounded-full border border-[#333047] bg-[#1b1a29] px-3 py-1.5 text-[11px] text-[#a7a3b4] sm:block">
-          <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-[#b8ff75]" />Works in your browser · No API key
+        <div className="hidden rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-[11px] text-zinc-600 sm:block">
+          <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />Works in your browser · No API key
         </div>
-        <button data-testid="button-reset" onClick={resetWorkspace} className="rounded-md border border-[#343148] px-3 py-2 text-[11px] text-[#aaa5ba] hover:border-[#75659a] hover:text-white"><RotateCcw size={13} className="mr-1.5 inline" />New video</button>
+        <button data-testid="button-reset" onClick={resetWorkspace} className="rounded-md border border-zinc-300 px-3 py-2 text-[11px] text-zinc-700 hover:border-black hover:text-black"><RotateCcw size={13} className="mr-1.5 inline" />New video</button>
       </header>
 
-      <main className="mx-auto grid max-w-[1500px] gap-px bg-[#29273a] lg:grid-cols-[260px_minmax(0,1fr)_310px] xl:grid-cols-[290px_minmax(0,1fr)_340px]">
-        <aside className="bg-[#161620] p-4 sm:p-5">
+      <main className="mx-auto grid max-w-[1500px] gap-px bg-zinc-200 lg:grid-cols-[260px_minmax(0,1fr)_310px] xl:grid-cols-[290px_minmax(0,1fr)_340px]">
+        <aside className="bg-zinc-50 p-4 sm:p-5">
           <PanelTitle label="1 / Upload" title="Add your video" />
           <div
             data-testid="dropzone-video"
@@ -730,115 +730,115 @@ function Studio() {
             onDragOver={(event) => event.preventDefault()}
             onDragLeave={() => setDragging(false)}
             onDrop={(event) => { event.preventDefault(); setDragging(false); handleFile(event.dataTransfer.files[0]); }}
-            className={`mt-5 cursor-pointer rounded-xl border border-dashed p-6 text-center transition-colors ${dragging ? 'border-[#e4f03b] bg-[#e4f03b]/10' : 'border-[#49435e] bg-[#1d1b2a] hover:border-[#9b76ff]'}`}
+            className={`mt-5 cursor-pointer rounded-xl border border-dashed p-6 text-center transition-colors ${dragging ? 'border-black bg-zinc-200' : 'border-zinc-300 bg-white hover:border-zinc-400'}`}
           >
             <input ref={inputRef} data-testid="input-video-file" type="file" accept="video/mp4,video/quicktime,video/webm,video/*" className="hidden" onChange={(event) => handleFile(event.target.files?.[0])} />
-            <div className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-xl bg-[#2a2542] text-[#a98bff]"><CloudUpload size={20} /></div>
-            <div className="text-[13px] font-semibold text-[#e6e2f0]">{videoFile ? 'Change video' : 'Upload video'}</div>
-            <div className="mt-1 text-[10px] text-[#807b90]">MP4, MOV, WebM · stays on device</div>
-            {videoFile && <div className="mt-3 truncate rounded-md bg-[#12121b] px-2 py-1.5 text-left text-[10px] text-[#b1a9ca]"><FileVideo size={12} className="mr-1 inline text-[#e4f03b]" />{videoFile.name}</div>}
+            <div className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-xl bg-zinc-100 text-zinc-800"><CloudUpload size={20} /></div>
+            <div className="text-[13px] font-semibold text-zinc-900">{videoFile ? 'Change video' : 'Upload video'}</div>
+            <div className="mt-1 text-[10px] text-zinc-500">MP4, MOV, WebM · stays on device</div>
+            {videoFile && <div className="mt-3 truncate rounded-md bg-zinc-100 px-2 py-1.5 text-left text-[10px] text-zinc-800"><FileVideo size={12} className="mr-1 inline text-black" />{videoFile.name}</div>}
           </div>
-          <button data-testid="button-load-demo" onClick={() => { void loadDemo(); }} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#342f4b] py-2 text-[11px] text-[#b0a8c0] hover:border-[#7157ad] hover:text-white"><Upload size={13} />Use demo video</button>
+          <button data-testid="button-load-demo" onClick={() => { void loadDemo(); }} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white py-2 text-[11px] text-zinc-700 hover:border-black hover:text-black"><Upload size={13} />Use demo video</button>
 
-          <div className="my-6 h-px bg-[#2d2a3c]" />
+          <div className="my-6 h-px bg-zinc-200" />
           <PanelTitle label="2 / Video length" title="How long should each clip be?" />
           <div className="mt-4 grid grid-cols-2 gap-2">
             {([['under15', 'Under 15 sec'], ['15-30', '15–30 sec'], ['30-60', '30–60 sec'], ['custom', 'Custom']] as [DurationPreset, string][]).map(([value, label]) => (
-              <button data-testid={`button-duration-${value}`} key={value} onClick={() => setDurationPreset(value)} className={`rounded-md border px-2 py-2.5 text-[10px] ${durationPreset === value ? 'border-[#9b76ff] bg-[#332853] text-white' : 'border-[#302d40] bg-[#1b1a27] text-[#868094] hover:border-[#51466d]'}`}>{label}</button>
+              <button data-testid={`button-duration-${value}`} key={value} onClick={() => setDurationPreset(value)} className={`rounded-md border px-2 py-2.5 text-[10px] font-medium ${durationPreset === value ? 'border-black bg-zinc-900 text-white' : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400'}`}>{label}</button>
             ))}
           </div>
-          {durationPreset === 'custom' && <div className="mt-3 flex items-center gap-3"><input data-testid="input-custom-duration" type="range" min="5" max="90" value={customDuration} onChange={(event) => setCustomDuration(Number(event.target.value))} className="range-violet min-w-0 flex-1" /><span className="studio-mono w-12 text-right text-[11px] text-[#d9d0f3]">{customDuration}s</span></div>}
+          {durationPreset === 'custom' && <div className="mt-3 flex items-center gap-3"><input data-testid="input-custom-duration" type="range" min="5" max="90" value={customDuration} onChange={(event) => setCustomDuration(Number(event.target.value))} className="range-violet min-w-0 flex-1" /><span className="studio-mono w-12 text-right text-[11px] text-zinc-800">{customDuration}s</span></div>}
 
           <div className="mt-6">
             <PanelTitle label="3 / Number of videos" title="How many should we make?" />
             <div className="mt-3 flex gap-2">
-              {[3, 5, 10].map((value) => <button data-testid={`button-clip-count-${value}`} key={value} onClick={() => setClipCount(value)} className={`flex-1 rounded-md border py-2 text-[10px] ${clipCount === value ? 'border-[#9b76ff] bg-[#332853] text-white' : 'border-[#302d40] bg-[#1b1a27] text-[#868094]'}`}>{value}</button>)}
+              {[3, 5, 10].map((value) => <button data-testid={`button-clip-count-${value}`} key={value} onClick={() => setClipCount(value)} className={`flex-1 rounded-md border py-2 text-[10px] font-medium ${clipCount === value ? 'border-black bg-zinc-900 text-white' : 'border-zinc-300 bg-white text-zinc-700'}`}>{value}</button>)}
             </div>
           </div>
 
           <div className="mt-6">
             <PanelTitle label="4 / Captions" title="Add text to your video" />
-            <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] text-[#c9c2d7]"><input data-testid="checkbox-caption" type="checkbox" checked={showCaption} onChange={(event) => setShowCaption(event.target.checked)} className="accent-[#e4f03b]" />Add caption</label>
+            <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] text-zinc-700"><input data-testid="checkbox-caption" type="checkbox" checked={showCaption} onChange={(event) => setShowCaption(event.target.checked)} className="accent-black" />Add caption</label>
             {showCaption && <div className="mt-3 space-y-2">
-              <textarea data-testid="input-caption-text" value={captionText} onChange={(event) => setCaptionText(event.target.value)} rows={3} placeholder="Write your caption…" className="w-full resize-none rounded-md border border-[#332f43] bg-[#1b1a27] px-3 py-2 text-[11px] text-[#e9e3f3] outline-none focus:border-[#9b76ff]" />
-              <button data-testid="button-generate-captions" onClick={generateCaptions} disabled={!videoUrl || !captionText.trim()} className="flex w-full items-center justify-center gap-1.5 rounded-md border border-[#51466d] bg-[#241f35] py-2 text-[10px] font-semibold text-[#cdbdff] hover:border-[#9b76ff] disabled:opacity-50"><WandSparkles size={12} />Generate timed captions</button>
-              <p className="text-[9px] leading-relaxed text-[#706a7d]">Splits your text into readable timed words locally. Audio from the uploaded video stays in the export.</p>
+              <textarea data-testid="input-caption-text" value={captionText} onChange={(event) => setCaptionText(event.target.value)} rows={3} placeholder="Write your caption…" className="w-full resize-none rounded-md border border-zinc-300 bg-white px-3 py-2 text-[11px] text-zinc-900 outline-none focus:border-black" />
+              <button data-testid="button-generate-captions" onClick={generateCaptions} disabled={!videoUrl || !captionText.trim()} className="flex w-full items-center justify-center gap-1.5 rounded-md border border-zinc-300 bg-zinc-100 py-2 text-[10px] font-semibold text-zinc-800 hover:border-black disabled:opacity-50"><WandSparkles size={12} />Generate timed captions</button>
+              <p className="text-[9px] leading-relaxed text-zinc-500">Splits your text into readable timed words locally. Audio from the uploaded video stays in the export.</p>
               <div className="grid grid-cols-2 gap-2">
-                <div className="relative"><select data-testid="select-caption-position" value={captionPosition} onChange={(event) => setCaptionPosition(event.target.value as CaptionPosition)} className="w-full appearance-none rounded-md border border-[#332f43] bg-[#1b1a27] px-3 py-2 text-[10px] text-[#c9c2d7]"><option value="top">Top</option><option value="center">Center</option><option value="bottom">Bottom</option></select><ChevronDown size={13} className="pointer-events-none absolute right-2 top-2 text-[#797389]" /></div>
-                <div className="flex items-center gap-2 rounded-md border border-[#332f43] bg-[#1b1a27] px-2"><input data-testid="input-caption-color" type="color" value={captionColor} onChange={(event) => setCaptionColor(event.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent" /><span className="studio-mono text-[9px] text-[#aaa3b6]">{captionColor}</span></div>
+                <div className="relative"><select data-testid="select-caption-position" value={captionPosition} onChange={(event) => setCaptionPosition(event.target.value as CaptionPosition)} className="w-full appearance-none rounded-md border border-zinc-300 bg-white px-3 py-2 text-[10px] text-zinc-800"><option value="top">Top</option><option value="center">Center</option><option value="bottom">Bottom</option></select><ChevronDown size={13} className="pointer-events-none absolute right-2 top-2 text-zinc-500" /></div>
+                <div className="flex items-center gap-2 rounded-md border border-zinc-300 bg-white px-2"><input data-testid="input-caption-color" type="color" value={captionColor} onChange={(event) => setCaptionColor(event.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent" /><span className="studio-mono text-[9px] text-zinc-700">{captionColor}</span></div>
               </div>
             </div>}
           </div>
 
-          <button data-testid="button-generate-clips" onClick={generateClips} disabled={processing || !videoUrl || sourceDuration <= 0} className="mt-7 flex w-full items-center justify-center gap-2 rounded-lg bg-white py-3 text-[12px] font-bold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50">{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}Make 5 videos</button>
-          {processing && <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#28263a]"><div className="h-full rounded-full bg-[#e4f03b] transition-all" style={{ width: `${progress}%` }} /></div>}
+          <button data-testid="button-generate-clips" onClick={generateClips} disabled={processing || !videoUrl || sourceDuration <= 0} className="mt-7 flex w-full items-center justify-center gap-2 rounded-lg bg-black py-3 text-[12px] font-bold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50">{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}Make 5 videos</button>
+          {processing && <div className="mt-2 h-1 overflow-hidden rounded-full bg-zinc-200"><div className="h-full rounded-full bg-black transition-all" style={{ width: `${progress}%` }} /></div>}
         </aside>
 
-        <section className="min-w-0 bg-[#11111a] p-4 sm:p-5 lg:p-7">
+        <section className="min-w-0 bg-white p-4 sm:p-5 lg:p-7">
           <div className="mx-auto max-w-[820px]">
             <div className="mb-4 flex items-center justify-between">
-              <div><div className="studio-mono text-[9px] uppercase tracking-[.15em] text-[#82789d]">Preview</div><h1 className="studio-display mt-1 text-[20px] font-semibold text-white">{videoFile?.name ?? 'Creator mindset demo'}</h1></div>
-              <div className="rounded-full border border-[#343148] px-3 py-1.5 text-[10px] text-[#8d879b]">Frame fills output</div>
+              <div><div className="studio-mono text-[9px] uppercase tracking-[.15em] text-zinc-500">Preview</div><h1 className="studio-display mt-1 text-[20px] font-semibold text-zinc-900">{videoFile?.name ?? 'Creator mindset demo'}</h1></div>
+              <div className="rounded-full border border-zinc-200 px-3 py-1.5 text-[10px] text-zinc-600">Frame fills output</div>
             </div>
-            <div className="mx-auto w-full max-w-[720px] overflow-hidden rounded-2xl border border-[#353149] bg-[#0c0d15] shadow-2xl" style={{ aspectRatio: previewRatio }}>
+            <div className="mx-auto w-full max-w-[720px] overflow-hidden rounded-2xl border border-zinc-300 bg-zinc-950 shadow-xl" style={{ aspectRatio: previewRatio }}>
               {videoUrl ? <video ref={videoRef} src={videoUrl} onLoadedMetadata={(event) => { const duration = event.currentTarget.duration; if (Number.isFinite(duration) && duration > 0) setSourceDuration(duration); }} className="h-full w-full object-cover" muted playsInline preload="auto" /> : <DemoPlaceholder />}
               {showCaption && getCaptionLine(currentTime) && <div className={`pointer-events-none absolute left-1/2 w-[86%] -translate-x-1/2 text-center ${captionPosition === 'top' ? 'top-[12%]' : captionPosition === 'center' ? 'top-1/2 -translate-y-1/2' : 'bottom-[10%]'}`}><span className="rounded-lg bg-black/60 px-3 py-2 text-[clamp(16px,3vw,30px)] font-extrabold text-white" style={{ color: captionColor, textShadow: '0 2px 4px rgba(0,0,0,.9)' }}>{getCaptionLine(currentTime)}</span></div>}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button data-testid="button-playback" onClick={() => setPlaying((value) => !value)} className="grid h-9 w-9 place-items-center rounded-full bg-white text-black">{playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}</button>
-              <span className="studio-mono text-[11px] text-[#c4bfd0]">{formatTime(currentTime)} / {formatTime(sourceDuration)}</span>
-              <div data-testid="timeline-scrubber" onClick={seek} className="relative h-1.5 min-w-[180px] flex-1 cursor-pointer rounded-full bg-[#302c44]"><div className="h-full rounded-full bg-[#a682ff]" style={{ width: `${sourceDuration ? (currentTime / sourceDuration) * 100 : 0}%` }} /><div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-[#e4f03b] bg-[#171622]" style={{ left: `calc(${sourceDuration ? (currentTime / sourceDuration) * 100 : 0}% - 6px)` }} /></div>
+              <button data-testid="button-playback" onClick={() => setPlaying((value) => !value)} className="grid h-9 w-9 place-items-center rounded-full bg-black text-white hover:bg-zinc-800">{playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}</button>
+              <span className="studio-mono text-[11px] text-zinc-700">{formatTime(currentTime)} / {formatTime(sourceDuration)}</span>
+              <div data-testid="timeline-scrubber" onClick={seek} className="relative h-1.5 min-w-[180px] flex-1 cursor-pointer rounded-full bg-zinc-200"><div className="h-full rounded-full bg-black" style={{ width: `${sourceDuration ? (currentTime / sourceDuration) * 100 : 0}%` }} /><div className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-black bg-white" style={{ left: `calc(${sourceDuration ? (currentTime / sourceDuration) * 100 : 0}% - 6px)` }} /></div>
             </div>
-            <div className="mt-5 flex items-center justify-between border-t border-[#292638] pt-4">
-              <span className="text-[11px] text-[#8d879b]">Output ratio</span>
-              <div className="flex gap-2">{(['9:16', '1:1', '16:9'] as Aspect[]).map((value) => <button data-testid={`button-aspect-${value.replace(':', '-')}`} key={value} onClick={() => setAspect(value)} className={`rounded-md border px-3 py-2 text-[10px] ${aspect === value ? 'border-[#e4f03b] bg-[#323518] text-[#eef28c]' : 'border-[#302d40] text-[#868094]'}`}>{value}</button>)}</div>
+            <div className="mt-5 flex items-center justify-between border-t border-zinc-200 pt-4">
+              <span className="text-[11px] text-zinc-600">Output ratio</span>
+              <div className="flex gap-2">{(['9:16', '1:1', '16:9'] as Aspect[]).map((value) => <button data-testid={`button-aspect-${value.replace(':', '-')}`} key={value} onClick={() => setAspect(value)} className={`rounded-md border px-3 py-2 text-[10px] ${aspect === value ? 'border-black bg-zinc-900 text-white' : 'border-zinc-300 text-zinc-700 hover:border-zinc-400'}`}>{value}</button>)}</div>
             </div>
-            <p className="mt-3 text-center text-[10px] text-[#6f697d]">The video fills the selected frame. No small inset or empty bars.</p>
+            <p className="mt-3 text-center text-[10px] text-zinc-500">The video fills the selected frame. No small inset or empty bars.</p>
           </div>
         </section>
 
-        <aside className="bg-[#161620] p-4 sm:p-5">
-          <div className="flex items-end justify-between"><PanelTitle label="Recent videos" title="Your video history" /><span className="studio-mono text-[10px] text-[#777286]">{recentClips.length} saved</span></div>
-          <p className="mt-2 text-[10px] leading-relaxed text-[#777186]">New videos stay here until you delete them.</p>
+        <aside className="bg-zinc-50 p-4 sm:p-5">
+          <div className="flex items-end justify-between"><PanelTitle label="Recent videos" title="Your video history" /><span className="studio-mono text-[10px] text-zinc-500">{recentClips.length} saved</span></div>
+          <p className="mt-2 text-[10px] leading-relaxed text-zinc-500">New videos stay here until you delete them.</p>
           <div className="mt-5 space-y-2.5">
-            {recentClips.length === 0 && <div className="rounded-lg border border-dashed border-[#3e3850] p-5 text-center text-[11px] text-[#777186]">Your generated videos will appear here.</div>}
+            {recentClips.length === 0 && <div className="rounded-lg border border-dashed border-zinc-300 p-5 text-center text-[11px] text-zinc-500">Your generated videos will appear here.</div>}
             {recentClips.map((clip, index) => {
               const exported = progressFor(clip);
               return (
-                <div data-testid={`card-clip-${clip.id}`} key={clip.id} className="rounded-lg border border-[#302d40] bg-[#1b1a27] p-3 hover:border-[#51466d]">
+                <div data-testid={`card-clip-${clip.id}`} key={clip.id} className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm hover:border-zinc-400">
                   <button onClick={() => selectClip(clip)} className="w-full text-left">
-                    <div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="truncate text-[11px] font-semibold text-[#ddd9e6]">{clip.title}</div><div className="studio-mono mt-1 truncate text-[9px] text-[#777186]">{formatTime(clip.start)} – {formatTime(clip.start + clip.length)} · {clip.sourceName}</div></div><span className="shrink-0 text-[10px] font-bold text-[#e4f03b]">{clip.score}%</span></div>
+                    <div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="truncate text-[11px] font-semibold text-zinc-900">{clip.title}</div><div className="studio-mono mt-1 truncate text-[9px] text-zinc-500">{formatTime(clip.start)} – {formatTime(clip.start + clip.length)} · {clip.sourceName}</div></div><span className="shrink-0 text-[10px] font-bold text-black">{clip.score}%</span></div>
                   </button>
                   <div className="mt-3 flex gap-2">
-                    <button data-testid={`button-export-${clip.id}`} onClick={() => { void downloadClip(clip, index + 1); }} className="grid h-8 w-8 place-items-center rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-80"><Download size={14} /></button>
-                    <button data-testid={`button-delete-${clip.id}`} onClick={() => deleteClip(clip)} className="grid w-9 place-items-center rounded-md border border-[#3b354b] text-[#93899f] hover:border-[#ff7f8a] hover:text-[#ff9aa1]"><Trash2 size={14} /></button>
+                    <button data-testid={`button-export-${clip.id}`} onClick={() => { void downloadClip(clip, index + 1); }} className="grid h-8 w-8 place-items-center rounded-lg bg-black text-white hover:bg-zinc-800 disabled:opacity-80"><Download size={14} /></button>
+                    <button data-testid={`button-delete-${clip.id}`} onClick={() => deleteClip(clip)} className="grid w-9 place-items-center rounded-md border border-zinc-300 text-zinc-500 hover:border-red-500 hover:text-red-500"><Trash2 size={14} /></button>
                   </div>
-                  {exported !== undefined && exported > 0 && exported < 100 && <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#373248]"><div className="h-full rounded-full bg-[#e4f03b] transition-[width]" style={{ width: `${exported}%` }} /></div>}
+                  {exported !== undefined && exported > 0 && exported < 100 && <div className="mt-2 h-1 overflow-hidden rounded-full bg-zinc-200"><div className="h-full rounded-full bg-black transition-[width]" style={{ width: `${exported}%` }} /></div>}
                 </div>
               );
             })}
           </div>
         </aside>
       </main>
-      {toast && <div data-testid="status-toast" className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-[#5a4b7e] bg-[#29233d] px-4 py-2.5 text-[11px] text-[#eae3fb] shadow-2xl"><Check size={14} className="text-[#e4f03b]" />{toast}</div>}
+      {toast && <div data-testid="status-toast" className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-900 px-4 py-2.5 text-[11px] text-white shadow-xl"><Check size={14} className="text-emerald-400" />{toast}</div>}
     </div>
   );
 }
 
 function PanelTitle({ label, title }: { label: string; title: string }) {
-  return <div><div className="studio-mono text-[9px] uppercase tracking-[.15em] text-[#82789d]">{label}</div><h2 className="studio-display mt-1 text-[16px] font-semibold tracking-tight text-[#e9e5f1]">{title}</h2></div>;
+  return <div><div className="studio-mono text-[9px] uppercase tracking-[.15em] text-zinc-500">{label}</div><h2 className="studio-display mt-1 text-[16px] font-semibold tracking-tight text-zinc-900">{title}</h2></div>;
 }
 
 function DemoPlaceholder() {
-  return <div className="relative grid h-full place-items-center overflow-hidden bg-[radial-gradient(circle_at_70%_25%,rgba(155,118,255,.34),transparent_28%),linear-gradient(135deg,#16192d,#2c2747_55%,#151827)]">
-    <div className="w-[58%] rounded-xl border border-[#a987ff]/30 bg-[#161526]/60 p-6 shadow-2xl backdrop-blur-sm">
-      <div className="mb-5 h-1.5 w-16 rounded-full bg-[#e4f03b]" />
+  return <div className="relative grid h-full place-items-center overflow-hidden bg-zinc-100">
+    <div className="w-[58%] rounded-xl border border-zinc-300 bg-white p-6 shadow-xl">
+      <div className="mb-5 h-1.5 w-16 rounded-full bg-black" />
       <div className="space-y-2">
-        <div className="h-2 w-4/5 rounded-full bg-[#e8e1fa]/60" />
-        <div className="h-2 w-3/5 rounded-full bg-[#e8e1fa]/30" />
-        <div className="h-2 w-2/5 rounded-full bg-[#e8e1fa]/20" />
+        <div className="h-2 w-4/5 rounded-full bg-zinc-300" />
+        <div className="h-2 w-3/5 rounded-full bg-zinc-200" />
+        <div className="h-2 w-2/5 rounded-full bg-zinc-100" />
       </div>
-      <div className="mt-7 text-center text-[10px] uppercase tracking-[.18em] text-[#bcb1dc]">Preparing demo video</div>
+      <div className="mt-7 text-center text-[10px] uppercase tracking-[.18em] text-zinc-500">Preparing demo video</div>
     </div>
   </div>;
 }
