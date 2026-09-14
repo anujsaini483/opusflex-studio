@@ -515,14 +515,14 @@ function Studio() {
     }
 
     const canvas = document.createElement('canvas');
-    const targetDimensions = aspect === '9:16' ? [1080, 1920] : aspect === '1:1' ? [1080, 1080] : [1920, 1080];
-    const sourceLongEdge = Math.max(video.videoWidth || targetDimensions[0], video.videoHeight || targetDimensions[1]);
-    const targetLongEdge = Math.max(targetDimensions[0], targetDimensions[1]);
-    const outputScale = Math.min(1, sourceLongEdge / targetLongEdge);
-    const dimensions = targetDimensions.map((dimension) => Math.max(2, Math.floor((dimension * outputScale) / 2) * 2));
-    canvas.width = dimensions[0];
-    canvas.height = dimensions[1];
-    const context = canvas.getContext('2d', { alpha: false, desynchronized: true });
+const targetDimensions = aspect === '9:16' ? [1080, 1920] : aspect === '1:1' ? [1080, 1080] : [1920, 1080];
+canvas.width = targetDimensions[0];
+canvas.height = targetDimensions[1];
+const context = canvas.getContext('2d', { alpha: false, desynchronized: true });
+if (context) {
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+}
     if (!context || !canvas.captureStream) {
       setToast('Video export is not supported in this browser');
       return;
@@ -555,8 +555,6 @@ function Studio() {
     let sourceStream: MediaStream | null = null;
     let stream: MediaStream | null = null;
     let recorder: MediaRecorder | null = null;
-    context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = 'high';
 
     const drawFrame = (elapsed: number) => {
       const width = canvas.width;
@@ -623,8 +621,7 @@ function Studio() {
         setToast('No audio track found in this source video');
       }
       stream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
-      const pixels = canvas.width * canvas.height;
-      const videoBitsPerSecond = pixels >= 1_500_000 ? 18_000_000 : pixels >= 800_000 ? 12_000_000 : 8_000_000;
+      const videoBitsPerSecond = 40_000_000;
       recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond });
       const chunks: BlobPart[] = [];
       const finished = new Promise<Blob>((resolve, reject) => {
