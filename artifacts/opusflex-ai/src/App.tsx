@@ -23,6 +23,11 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 type DurationPreset = 'under15' | '15-30' | '30-60' | 'custom';
 type Aspect = '9:16' | '1:1' | '16:9';
 type CaptionPosition = 'top' | 'center' | 'bottom';
+type CaptionWord = { text: string; start: number; end: number };
+type AudioGraph = {
+  context: AudioContext;
+  destination: MediaStreamAudioDestinationNode;
+};
 type Clip = {
   id: number;
   title: string;
@@ -98,6 +103,14 @@ function waitForVideoEvent(video: HTMLVideoElement, eventName: string) {
   });
 }
 
+function getVideoCaptureStream(video: HTMLVideoElement) {
+  const source = video as unknown as {
+    captureStream?: () => MediaStream;
+    mozCaptureStream?: () => MediaStream;
+  };
+  return source.captureStream?.() ?? source.mozCaptureStream?.() ?? null;
+}
+
 function createDemoVideo() {
   const canvas = document.createElement('canvas');
   const demoWidth = 640;
@@ -110,6 +123,29 @@ function createDemoVideo() {
   context.scale(canvas.width / demoWidth, canvas.height / demoHeight);
 
   const stream = canvas.captureStream(30);
+  let audioContext: AudioContext | null = null;
+  let demoOscillator: OscillatorNode | null = null;
+  try {
+    const AudioContextConstructor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (AudioContextConstructor) {
+      audioContext = new AudioContextConstructor();
+      const audioDestination = audioContext.createMediaStreamDestination();
+      const gain = audioContext.createGain();
+      demoOscillator = audioContext.createOscillator();
+      demoOscillator.type = 'sine';
+      demoOscillator.frequency.setValueAtTime(180, audioContext.currentTime);
+      demoOscillator.frequency.linearRampToValueAtTime(240, audioContext.currentTime + DEMO_DURATION);
+      gain.gain.value = 0.035;
+      demoOscillator.connect(gain);
+      gain.connect(audioDestination);
+      audioDestination.stream.getAudioTracks().forEach((track) => stream.addTrack(track));
+      demoOscillator.start();
+      void audioContext.resume();
+    }
+  } catch {
+    audioContext = null;
+    demoOscillator = null;
+  }
   const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6_000_000 });
   const chunks: BlobPart[] = [];
 
@@ -149,10 +185,14 @@ function createDemoVideo() {
       if (event.data.size > 0) chunks.push(event.data);
     };
     recorder.onerror = () => {
+      demoOscillator?.stop();
+      void audioContext?.close();
       stream.getTracks().forEach((track) => track.stop());
       resolve('');
     };
     recorder.onstop = () => {
+      demoOscillator?.stop();
+      void audioContext?.close();
       stream.getTracks().forEach((track) => track.stop());
       resolve(URL.createObjectURL(new Blob(chunks, { type: mimeType })));
     };
@@ -188,6 +228,7 @@ function Studio() {
   const sourceUrlsRef = useRef(new Set<string>());
   const clipSourceUrlsRef = useRef<Record<number, string>>({});
   const renderedVideosRef = useRef<Record<number, RenderedVideo>>({});
+  const audioGraphsRef = useRef(new WeakMap<HTMLVideoElement, AudioGraph>());
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [sourceDuration, setSourceDuration] = useState(DEMO_DURATION);
@@ -200,6 +241,7 @@ function Studio() {
   const [clipCount, setClipCount] = useState(5);
   const [showCaption, setShowCaption] = useState(true);
   const [captionText, setCaptionText] = useState('Make the boring part visible');
+  const [captionWords, setCaptionWords] = useState<CaptionWord[]>([]);
   const [captionPosition, setCaptionPosition] = useState<CaptionPosition>('bottom');
   const [captionColor, setCaptionColor] = useState('#E4F03B');
   const [processing, setProcessing] = useState(false);
@@ -377,6 +419,53 @@ function Studio() {
     setToast('Analyzing video locally…');
   }
 
+  function generateCaptions() {
+    const text = captionText.trim();
+    if (!text) {
+      setToast('Write caption text first');
+      return;
+    }
+    const words = text.split(/\s+/).filter(Boolean);
+    const wordDuration = Math.max(0.28, sourceDuration / Math.max(words.length, 1));
+    setCaptionWords(words.map((word, index) => ({
+      text: word,
+      start: index * wordDuration,
+      end: Math.min(sourceDuration, (index + 1) * wordDuration),
+    })));
+    setShowCaption(true);
+    setToast('Timed captions generated locally');
+  }
+
+  function getCaptionLine(time: number) {
+    if (!captionWords.length) return captionText.trim();
+    const activeIndex = captionWords.findIndex((word) => time >= word.start && time <= word.end);
+    if (activeIndex < 0) return '';
+    return captionWords.slice(Math.max(0, activeIndex - 1), Math.min(captionWords.length, activeIndex + 2)).map((word) => word.text).join(' ');
+  }
+
+  async function getAudioTracksForExport(video: HTMLVideoElement) {
+    const directStream = getVideoCaptureStream(video);
+    const directTracks = directStream?.getAudioTracks() ?? [];
+    if (directTracks.length > 0) return directTracks;
+    const AudioContextConstructor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextConstructor) return [];
+    try {
+      let graph = audioGraphsRef.current.get(video);
+      if (!graph) {
+        const context = new AudioContextConstructor();
+        const source = context.createMediaElementSource(video);
+        const destination = context.createMediaStreamDestination();
+        source.connect(destination);
+        graph = { context, destination };
+        audioGraphsRef.current.set(video, graph);
+      }
+      await graph.context.resume();
+      return graph.destination.stream.getAudioTracks();
+    } catch {
+      return [];
+    }
+  }
+
   function seek(event: React.MouseEvent<HTMLDivElement>) {
     const bounds = event.currentTarget.getBoundingClientRect();
     const next = Math.max(0, Math.min(sourceDuration, ((event.clientX - bounds.left) / bounds.width) * sourceDuration));
@@ -429,8 +518,11 @@ function Studio() {
 
     setExportQueue((current) => current.includes(clip.id) ? current : [...current, clip.id]);
     setExportProgress((current) => ({ ...current, [clip.id]: 1 }));
+    const oldMuted = video.muted;
+    const oldVolume = video.volume;
     if (video !== videoRef.current) {
-      video.muted = true;
+      video.muted = false;
+      video.volume = 0;
       video.playsInline = true;
       video.src = sourceUrl;
       await waitForVideoEvent(video, 'loadedmetadata');
@@ -441,20 +533,12 @@ function Studio() {
     const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : sourceDuration;
     const start = Math.min(clip.start, Math.max(0, duration - 0.1));
     const length = Math.max(0.8, Math.min(clip.length, duration - start));
-    const stream = canvas.captureStream(30);
-    const pixels = canvas.width * canvas.height;
-    const videoBitsPerSecond = pixels >= 1_500_000 ? 14_000_000 : pixels >= 800_000 ? 10_000_000 : 7_000_000;
-    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond });
-    const chunks: BlobPart[] = [];
+    let canvasStream: MediaStream | null = null;
+    let sourceStream: MediaStream | null = null;
+    let stream: MediaStream | null = null;
+    let recorder: MediaRecorder | null = null;
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
-    const finished = new Promise<Blob>((resolve, reject) => {
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
-      };
-      recorder.onerror = () => reject(new Error('recording failed'));
-      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
-    });
 
     const drawFrame = (elapsed: number) => {
       const width = canvas.width;
@@ -476,16 +560,34 @@ function Studio() {
       }
       context.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
 
-      if (showCaption && captionText.trim()) {
+      const captionLine = getCaptionLine(start + elapsed);
+      if (showCaption && captionLine) {
         const captionY = captionPosition === 'top' ? height * 0.16 : captionPosition === 'center' ? height * 0.5 : height * 0.82;
         context.font = `800 ${Math.max(28, Math.round(58 * (height / 1920)))}px Inter, sans-serif`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.lineWidth = Math.max(5, height / 260);
         context.strokeStyle = 'rgba(0,0,0,.82)';
-        context.strokeText(captionText, width / 2, captionY);
+        const maxTextWidth = width * 0.84;
+        const captionLines: string[] = [];
+        let line = '';
+        captionLine.split(/\s+/).forEach((word) => {
+          const candidate = line ? `${line} ${word}` : word;
+          if (context.measureText(candidate).width > maxTextWidth && line) {
+            captionLines.push(line);
+            line = word;
+          } else {
+            line = candidate;
+          }
+        });
+        if (line) captionLines.push(line);
         context.fillStyle = captionColor;
-        context.fillText(captionText, width / 2, captionY);
+        const lineHeight = Math.max(34, Math.round(70 * (height / 1920)));
+        captionLines.forEach((captionLineText, index) => {
+          const lineY = captionY + (index - (captionLines.length - 1) / 2) * lineHeight;
+          context.strokeText(captionLineText, width / 2, lineY);
+          context.fillText(captionLineText, width / 2, lineY);
+        });
       }
     };
 
@@ -493,7 +595,28 @@ function Studio() {
       video.pause();
       video.currentTime = start;
       await waitForVideoEvent(video, 'seeked');
+      video.muted = false;
+      video.volume = 0;
       await video.play();
+      canvasStream = canvas.captureStream(30);
+      sourceStream = getVideoCaptureStream(video);
+      const audioTracks = await getAudioTracksForExport(video);
+      if (audioTracks.length === 0) {
+        setToast('No audio track found in this source video');
+      }
+      stream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
+      const pixels = canvas.width * canvas.height;
+      const videoBitsPerSecond = pixels >= 1_500_000 ? 18_000_000 : pixels >= 800_000 ? 12_000_000 : 8_000_000;
+      recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond });
+      const chunks: BlobPart[] = [];
+      const finished = new Promise<Blob>((resolve, reject) => {
+        if (!recorder) return reject(new Error('recorder unavailable'));
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) chunks.push(event.data);
+        };
+        recorder.onerror = () => reject(new Error('recording failed'));
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+      });
       recorder.start(250);
       const startedAt = performance.now();
       const frameVideo = video as unknown as {
@@ -545,9 +668,12 @@ function Studio() {
       setExportProgress((current) => ({ ...current, [clip.id]: 0 }));
       setToast('Export failed. Try the video again in Chrome or Safari.');
     } finally {
-      stream.getTracks().forEach((track) => track.stop());
+      canvasStream?.getTracks().forEach((track) => track.stop());
+      sourceStream?.getTracks().forEach((track) => track.stop());
       video.pause();
       if (video === videoRef.current) {
+        video.muted = oldMuted;
+        video.volume = oldVolume;
         video.currentTime = oldTime;
         if (oldPlaying) void video.play().catch(() => undefined);
       } else {
@@ -617,6 +743,8 @@ function Studio() {
             <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] text-[#c9c2d7]"><input data-testid="checkbox-caption" type="checkbox" checked={showCaption} onChange={(event) => setShowCaption(event.target.checked)} className="accent-[#e4f03b]" />Add caption</label>
             {showCaption && <div className="mt-3 space-y-2">
               <textarea data-testid="input-caption-text" value={captionText} onChange={(event) => setCaptionText(event.target.value)} rows={3} placeholder="Write your caption…" className="w-full resize-none rounded-md border border-[#332f43] bg-[#1b1a27] px-3 py-2 text-[11px] text-[#e9e3f3] outline-none focus:border-[#9b76ff]" />
+              <button data-testid="button-generate-captions" onClick={generateCaptions} disabled={!videoUrl || !captionText.trim()} className="flex w-full items-center justify-center gap-1.5 rounded-md border border-[#51466d] bg-[#241f35] py-2 text-[10px] font-semibold text-[#cdbdff] hover:border-[#9b76ff] disabled:opacity-50"><WandSparkles size={12} />Generate timed captions</button>
+              <p className="text-[9px] leading-relaxed text-[#706a7d]">Splits your text into readable timed words locally. Audio from the uploaded video stays in the export.</p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="relative"><select data-testid="select-caption-position" value={captionPosition} onChange={(event) => setCaptionPosition(event.target.value as CaptionPosition)} className="w-full appearance-none rounded-md border border-[#332f43] bg-[#1b1a27] px-3 py-2 text-[10px] text-[#c9c2d7]"><option value="top">Top</option><option value="center">Center</option><option value="bottom">Bottom</option></select><ChevronDown size={13} className="pointer-events-none absolute right-2 top-2 text-[#797389]" /></div>
                 <div className="flex items-center gap-2 rounded-md border border-[#332f43] bg-[#1b1a27] px-2"><input data-testid="input-caption-color" type="color" value={captionColor} onChange={(event) => setCaptionColor(event.target.value)} className="h-6 w-7 cursor-pointer border-0 bg-transparent" /><span className="studio-mono text-[9px] text-[#aaa3b6]">{captionColor}</span></div>
@@ -636,7 +764,7 @@ function Studio() {
             </div>
             <div className="mx-auto w-full max-w-[720px] overflow-hidden rounded-2xl border border-[#353149] bg-[#0c0d15] shadow-2xl" style={{ aspectRatio: previewRatio }}>
               {videoUrl ? <video ref={videoRef} src={videoUrl} className="h-full w-full object-cover" muted playsInline preload="auto" /> : <DemoPlaceholder />}
-              {showCaption && captionText.trim() && <div className={`pointer-events-none absolute left-1/2 w-[86%] -translate-x-1/2 text-center ${captionPosition === 'top' ? 'top-[12%]' : captionPosition === 'center' ? 'top-1/2 -translate-y-1/2' : 'bottom-[10%]'}`}><span className="rounded-lg bg-black/60 px-3 py-2 text-[clamp(16px,3vw,30px)] font-extrabold text-white" style={{ color: captionColor, textShadow: '0 2px 4px rgba(0,0,0,.9)' }}>{captionText}</span></div>}
+              {showCaption && getCaptionLine(currentTime) && <div className={`pointer-events-none absolute left-1/2 w-[86%] -translate-x-1/2 text-center ${captionPosition === 'top' ? 'top-[12%]' : captionPosition === 'center' ? 'top-1/2 -translate-y-1/2' : 'bottom-[10%]'}`}><span className="rounded-lg bg-black/60 px-3 py-2 text-[clamp(16px,3vw,30px)] font-extrabold text-white" style={{ color: captionColor, textShadow: '0 2px 4px rgba(0,0,0,.9)' }}>{getCaptionLine(currentTime)}</span></div>}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <button data-testid="button-playback" onClick={() => setPlaying((value) => !value)} className="grid h-9 w-9 place-items-center rounded-full bg-[#e4f03b] text-[#17171d]">{playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}</button>
