@@ -81,7 +81,7 @@
         <!-- Hero & Upload Section -->
         <section class="text-center max-w-3xl mx-auto space-y-6">
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold">
-                <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i> Turn Long Videos into 9:16 Viral Shorts
+                <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i> Turn Long Videos into Viral Shorts
             </div>
             
             <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
@@ -120,7 +120,7 @@
             </div>
         </section>
 
-        <!-- Hidden Native Video Element for processing -->
+        <!-- Hidden Native Video Element -->
         <video id="hiddenSourceVideo" class="hidden" crossorigin="anonymous" playsinline></video>
 
         <!-- Live Crop Preview Studio -->
@@ -128,9 +128,9 @@
             <div class="flex flex-col md:flex-row items-center justify-between border-b border-brand-border pb-4 gap-4">
                 <div>
                     <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i data-lucide="crop" class="w-5 h-5 text-purple-400"></i> Live AI Crop & Subtitle Preview
+                        <i data-lucide="crop" class="w-5 h-5 text-purple-400"></i> Live AI Crop & Controls
                     </h2>
-                    <p class="text-xs text-gray-400">Real-time dynamic video cropping canvas</p>
+                    <p class="text-xs text-gray-400">Set aspect ratio, duration & subtitle styles</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button onclick="togglePlayPause()" id="playPauseBtn" class="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-medium text-xs px-4 py-2 rounded-xl border border-purple-500/30 transition flex items-center gap-1.5">
@@ -151,7 +151,7 @@
                 <!-- Controls & Presets -->
                 <div class="md:col-span-2 space-y-6">
                     
-                    <!-- Aspect Ratio -->
+                    <!-- 1. Aspect Ratio -->
                     <div class="space-y-2">
                         <label class="text-xs text-gray-400 font-medium">1. Choose Output Aspect Ratio</label>
                         <div class="grid grid-cols-3 gap-3">
@@ -167,9 +167,41 @@
                         </div>
                     </div>
 
-                    <!-- Subtitle Style -->
+                    <!-- 2. Target Clip Duration (NEW FEATURE) -->
                     <div class="space-y-2">
-                        <label class="text-xs text-gray-400 font-medium">2. Select Subtitle / Caption Style</label>
+                        <label class="text-xs text-gray-400 font-medium flex items-center justify-between">
+                            <span>2. Target Clip Duration</span>
+                            <span id="selectedDurLabel" class="text-purple-400 font-bold">15 Seconds</span>
+                        </label>
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            <button id="dur15" onclick="setDuration(15)" class="p-2.5 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+                                ⚡ 15s
+                            </button>
+                            <button id="dur20" onclick="setDuration(20)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+                                ⏱️ 20s
+                            </button>
+                            <button id="dur30" onclick="setDuration(30)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+                                🔥 30s
+                            </button>
+                            <button id="dur60" onclick="setDuration(60)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+                                🎬 60s
+                            </button>
+                            <button id="durCustomBtn" onclick="setDuration('custom')" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+                                ⚙️ Custom
+                            </button>
+                        </div>
+
+                        <!-- Custom Duration Input Box -->
+                        <div id="customDurationBox" class="hidden mt-2 flex items-center gap-3 bg-brand-dark/60 p-3 rounded-xl border border-brand-border">
+                            <span class="text-xs text-gray-300 font-medium">Custom Length:</span>
+                            <input type="number" id="customDurInput" min="5" max="300" value="45" oninput="updateCustomDuration()" class="w-20 bg-brand-dark text-white border border-purple-500 rounded-lg px-2.5 py-1.5 text-xs text-center font-bold focus:outline-none">
+                            <span class="text-xs text-gray-400">Seconds (Max 300s)</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Subtitle Style -->
+                    <div class="space-y-2">
+                        <label class="text-xs text-gray-400 font-medium">3. Select Subtitle / Caption Style</label>
                         <select id="subtitleStyleSelect" onchange="updateSubtitleStyle()" class="w-full bg-brand-dark/90 text-gray-200 border border-brand-border rounded-xl px-4 py-3 text-xs font-medium focus:outline-none focus:border-purple-500">
                             <option value="hormozi">🔥 Hormozi Style (Bold Yellow + Black Box)</option>
                             <option value="minimalist">✨ Minimalist White (Clean Shadow)</option>
@@ -178,7 +210,7 @@
                         </select>
                     </div>
 
-                    <!-- Active Speaker / Zoom -->
+                    <!-- Speaker Tracking -->
                     <div class="p-4 rounded-xl border border-brand-border bg-brand-dark/40 space-y-3">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
@@ -187,7 +219,6 @@
                             </div>
                             <input type="checkbox" id="speakerTrackToggle" checked onchange="drawCanvasFrame()" class="w-4 h-4 accent-purple-600 rounded cursor-pointer">
                         </div>
-                        <p class="text-[11px] text-gray-500">Automatically crops and centers the subject in 9:16 vertical frame.</p>
                     </div>
 
                     <button onclick="generateClips()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white font-bold text-sm py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30">
@@ -202,7 +233,7 @@
         <!-- Loading State Indicator -->
         <section id="loadingIndicator" class="glass-card p-10 rounded-2xl text-center space-y-4 hidden">
             <div class="w-12 h-12 rounded-full border-4 border-purple-500 border-t-transparent animate-spin mx-auto"></div>
-            <h3 class="text-lg font-bold text-white">AI is analyzing video & cropping clips...</h3>
+            <h3 class="text-lg font-bold text-white">AI is extracting <span id="loadingDurText">15s</span> clips...</h3>
             <p class="text-xs text-gray-400">Detecting face tracking, high engagement moments & generating captions.</p>
         </section>
 
@@ -216,7 +247,7 @@
             </div>
 
             <div id="clipsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Clips will be populated by JS -->
+                <!-- Clips populated by JS -->
             </div>
         </section>
 
@@ -226,9 +257,8 @@
         <p>© 2026 Flux AI Inc. Crafted for content creators.</p>
     </footer>
 
-    <!-- JavaScript Logic Integration -->
+    <!-- JavaScript Logic -->
     <script>
-        // DOM Elements
         const video = document.getElementById('hiddenSourceVideo');
         const canvas = document.getElementById('cropCanvas');
         const ctx = canvas.getContext('2d');
@@ -240,14 +270,14 @@
         let isPlaying = false;
         let animationFrameId = null;
 
-        // Subtitle Text & Config
+        // Duration State
+        let selectedDuration = 15; // default 15s
+
         let currentSubtitleText = "THE SECRET TO SUCCESS!";
         let subtitleStyle = "hormozi";
 
-        // Initialize Icons
         lucide.createIcons();
 
-        // 1. Handle File Selection
         function handleFileSelect(event) {
             const file = event.target.files[0];
             if (file) {
@@ -256,19 +286,16 @@
             }
         }
 
-        // 2. Handle YouTube / URL input
         function processVideoInput() {
             const urlInput = document.getElementById('ytUrlInput').value.trim();
             if (!urlInput) {
                 alert('Please enter a video URL or upload a file!');
                 return;
             }
-            // Demo fallback sample video if URL is pasted
             const demoVideoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
             loadVideo(demoVideoUrl);
         }
 
-        // 3. Load Video & Setup Canvas
         function loadVideo(src) {
             video.src = src;
             studio.classList.remove('hidden');
@@ -284,11 +311,42 @@
             };
         }
 
-        // 4. Aspect Ratio Switcher
+        // --- DURATION SELECTION LOGIC ---
+        function setDuration(dur) {
+            const customBox = document.getElementById('customDurationBox');
+            const durLabel = document.getElementById('selectedDurLabel');
+
+            // Reset Button Styles
+            ['15', '20', '30', '60'].forEach(id => {
+                const btn = document.getElementById('dur' + id);
+                btn.className = "p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 transition";
+            });
+            document.getElementById('durCustomBtn').className = "p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-1 transition";
+
+            if (dur === 'custom') {
+                customBox.classList.remove('hidden');
+                const customVal = parseInt(document.getElementById('customDurInput').value) || 45;
+                selectedDuration = customVal;
+                document.getElementById('durCustomBtn').className = "p-2.5 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-semibold flex items-center justify-center gap-1 transition";
+                durLabel.innerText = customVal + " Seconds (Custom)";
+            } else {
+                customBox.classList.add('hidden');
+                selectedDuration = dur;
+                document.getElementById('dur' + dur).className = "p-2.5 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-semibold flex items-center justify-center gap-1 transition";
+                durLabel.innerText = dur + " Seconds";
+            }
+        }
+
+        function updateCustomDuration() {
+            const val = parseInt(document.getElementById('customDurInput').value) || 15;
+            selectedDuration = val;
+            document.getElementById('selectedDurLabel').innerText = val + " Seconds (Custom)";
+        }
+
+        // --- ASPECT RATIO LOGIC ---
         function setAspectRatio(ratio) {
             currentRatio = ratio;
             
-            // Highlight Buttons UI
             ['916', '11', '169'].forEach(id => {
                 const btn = document.getElementById('btn' + id);
                 btn.className = "p-3 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition";
@@ -311,7 +369,7 @@
             drawCanvasFrame();
         }
 
-        // 5. Draw Video Frame & Captions on Canvas
+        // --- DRAW CANVAS FRAME ---
         function drawCanvasFrame() {
             if (!video.videoWidth) return;
 
@@ -322,7 +380,6 @@
 
             ctx.clearRect(0, 0, cw, ch);
 
-            // Calculate Crop (Center Zoom)
             const isSpeakerTracking = document.getElementById('speakerTrackToggle').checked;
             let srcWidth = vw;
             let srcHeight = vh;
@@ -334,20 +391,16 @@
 
             if (videoAspect > targetAspect) {
                 srcWidth = vh * targetAspect;
-                srcX = isSpeakerTracking ? (vw - srcWidth) / 2 : (vw - srcWidth) / 2;
+                srcX = (vw - srcWidth) / 2;
             } else {
                 srcHeight = vw / targetAspect;
                 srcY = (vh - srcHeight) / 2;
             }
 
-            // Render Cropped Video onto Canvas
             ctx.drawImage(video, srcX, srcY, srcWidth, srcHeight, 0, 0, cw, ch);
-
-            // Render Subtitles Overlay
             drawSubtitles(cw, ch);
         }
 
-        // Render Dynamic Subtitle Overlays
         function drawSubtitles(cw, ch) {
             subtitleStyle = document.getElementById('subtitleStyleSelect').value;
             if (subtitleStyle === 'none') return;
@@ -360,11 +413,9 @@
                 const text = currentSubtitleText;
                 const textWidth = ctx.measureText(text).width;
                 
-                // Black Background Box
                 ctx.fillStyle = '#000000';
                 ctx.fillRect((cw / 2) - (textWidth / 2) - 10, ch - 80, textWidth + 20, 36);
                 
-                // Yellow Text
                 ctx.fillStyle = '#facc15';
                 ctx.fillText(text, cw / 2, ch - 55);
             } 
@@ -386,7 +437,6 @@
             ctx.restore();
         }
 
-        // Animation Loop for Smooth Playback
         function renderCanvasLoop() {
             if (!video.paused && !video.ended) {
                 drawCanvasFrame();
@@ -394,7 +444,6 @@
             }
         }
 
-        // Play/Pause Control
         function togglePlayPause() {
             if (video.paused) {
                 video.play();
@@ -422,23 +471,27 @@
             drawCanvasFrame();
         }
 
-        // 6. Generate Clips Simulator
+        // --- GENERATE CLIPS LOGIC WITH DURATION ---
         function generateClips() {
+            document.getElementById('loadingDurText').innerText = selectedDuration + "s";
             loadingIndicator.classList.remove('hidden');
             clipsGallery.scrollIntoView({ behavior: 'smooth' });
 
             setTimeout(() => {
                 loadingIndicator.classList.add('hidden');
                 populateClipsGallery();
-            }, 1500);
+            }, 1200);
         }
 
-        // Populate Clips Grid
         function populateClipsGallery() {
+            const durFormatted = selectedDuration < 60 
+                ? `00:${selectedDuration < 10 ? '0' + selectedDuration : selectedDuration}` 
+                : `${Math.floor(selectedDuration/60)}:${(selectedDuration%60 < 10 ? '0' : '') + selectedDuration%60}`;
+
             const demoClips = [
-                { title: "Key Mindset Shift for 2026", score: "98% Virality", duration: "00:42", thumb: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80", caption: "THE SECRET TO SUCCESS!" },
-                { title: "Avoid This Common Mistake", score: "94% Virality", duration: "00:30", thumb: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80", caption: "NEVER DO THIS AGAIN!" },
-                { title: "Daily Execution Strategy", score: "89% Virality", duration: "00:55", thumb: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80", caption: "MIND-BLOWING TIP!" }
+                { title: "Key Mindset Shift for Growth", score: "98% Virality", duration: durFormatted, thumb: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80", caption: "THE SECRET TO SUCCESS!" },
+                { title: "Avoid This Common Mistake", score: "94% Virality", duration: durFormatted, thumb: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80", caption: "NEVER DO THIS AGAIN!" },
+                { title: "Daily Execution Strategy", score: "89% Virality", duration: durFormatted, thumb: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80", caption: "MIND-BLOWING TIP!" }
             ];
 
             clipsGrid.innerHTML = demoClips.map((clip, idx) => `
@@ -449,8 +502,8 @@
                         <div class="absolute top-3 left-3 bg-red-500/90 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow">
                             🔥 ${clip.score}
                         </div>
-                        <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-gray-300 text-[10px] font-medium px-2 py-0.5 rounded">
-                            ${clip.duration}
+                        <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-purple-300 font-bold text-[11px] px-2.5 py-0.5 rounded border border-purple-500/30">
+                            ⏱️ ${clip.duration}
                         </div>
 
                         <div class="absolute bottom-12 px-4 text-center">
@@ -463,11 +516,11 @@
                     <div class="p-4 flex-1 flex flex-col justify-between space-y-4">
                         <div class="space-y-1">
                             <h4 class="text-sm font-semibold text-white line-clamp-1">${clip.title}</h4>
-                            <p class="text-xs text-gray-400">Cropped to 9:16 + Auto Subtitles</p>
+                            <p class="text-xs text-gray-400">${selectedDuration}s Clip • Auto Subtitles Enabled</p>
                         </div>
 
                         <div class="flex items-center gap-2 pt-2 border-t border-brand-border">
-                            <button onclick="alert('Opening Clip ${idx+1} Editor...')" class="flex-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-medium text-xs py-2 rounded-xl border border-purple-500/30 transition flex items-center justify-center gap-1.5">
+                            <button onclick="alert('Opening Editor for Clip ${idx+1}...')" class="flex-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-medium text-xs py-2 rounded-xl border border-purple-500/30 transition flex items-center justify-center gap-1.5">
                                 <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit
                             </button>
                             <button onclick="downloadClip('${clip.title}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white font-semibold text-xs px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow">
@@ -482,10 +535,9 @@
         }
 
         function downloadClip(title) {
-            alert(`Downloading clip: "${title}" in 1080x1920 HD format!`);
+            alert(`Downloading ${selectedDuration}s clip: "${title}" in HD!`);
         }
 
-        // Populate initial demo clips on load
         populateClipsGallery();
     </script>
 </body>
