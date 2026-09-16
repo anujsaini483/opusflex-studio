@@ -1,24 +1,341 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>OpusFlex AI - Smart Video-to-Shorts Generator &amp; Caption Editor</title>
-    <meta name="description" content="OpusFlex AI - Smart Video-to-Shorts Generator &amp; Caption Editor — built on Replit. Update this description to reflect the app." />
-    <meta name="robots" content="index, follow" />
-    <meta property="og:title" content="OpusFlex AI - Smart Video-to-Shorts Generator &amp; Caption Editor" />
-    <meta property="og:description" content="OpusFlex AI - Smart Video-to-Shorts Generator &amp; Caption Editor — built on Replit. Update this description to reflect the app." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="OpusFlex AI - Smart Video-to-Shorts Generator &amp; Caption Editor" />
-    <meta name="twitter:description" content="OpusFlex AI - Smart Video-to-Shorts Generator &amp; Caption Editor — built on Replit. Update this description to reflect the app." />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flux AI - Long Video to Shorts Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            dark: '#0b0f19',
+                            card: '#131927',
+                            border: 'rgba(255, 255, 255, 0.08)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glow-effect {
+            box-shadow: 0 0 50px -10px rgba(124, 58, 237, 0.3);
+        }
+        .glass-card {
+            background: rgba(19, 25, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-brand-border bg-brand-dark/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-extrabold text-white text-xl shadow-lg shadow-purple-500/20">
+                    F
+                </div>
+                <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-purple-400">
+                    FLUX <span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 uppercase tracking-widest font-semibold">Clips AI</span>
+                </span>
+            </div>
+
+            <!-- Navigation & Actions -->
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex items-center gap-1 bg-brand-card px-3 py-1.5 rounded-full border border-brand-border text-xs text-gray-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>AI Engine Active</span>
+                </div>
+                <button class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-sm px-4 py-2 rounded-xl transition shadow-lg shadow-purple-600/30">
+                    Upgrade Pro
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Hub -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-10 space-y-12">
+
+        <!-- Hero & Input Section -->
+        <section class="text-center max-w-3xl mx-auto space-y-6">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold">
+                <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i> Turn 1 Long Video into 10 Viral Shorts in Seconds
+            </div>
+            
+            <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                Repurpose videos into viral <br>
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-500">Shorts, Reels & TikToks</span>
+            </h1>
+
+            <!-- Input Box & Dropzone -->
+            <div class="glass-card p-4 rounded-2xl glow-effect space-y-4">
+                <!-- URL Input Bar -->
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <i data-lucide="youtube" class="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" placeholder="Paste YouTube link here... (e.g. https://youtube.com/watch?v=...)" 
+                            class="w-full bg-brand-dark/90 text-white placeholder-gray-500 rounded-xl pl-12 pr-4 py-3.5 border border-brand-border focus:outline-none focus:border-purple-500 text-sm transition">
+                    </div>
+                    <button class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white font-semibold text-sm px-6 py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 whitespace-nowrap">
+                        <i data-lucide="wand-2" class="w-4 h-4"></i> Get Free Clips
+                    </button>
+                </div>
+
+                <!-- Divider -->
+                <div class="flex items-center gap-4 text-xs text-gray-500 uppercase tracking-widest my-2">
+                    <div class="h-[1px] flex-1 bg-brand-border"></div>
+                    <span>or upload file</span>
+                    <div class="h-[1px] flex-1 bg-brand-border"></div>
+                </div>
+
+                <!-- Drag & Drop Zone -->
+                <div class="border-2 border-dashed border-brand-border hover:border-purple-500/50 rounded-xl p-6 transition cursor-pointer bg-brand-dark/40 flex flex-col items-center justify-center gap-2 group">
+                    <div class="w-10 h-10 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition">
+                        <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                    </div>
+                    <p class="text-xs text-gray-300 font-medium">Click to upload or drag & drop video file</p>
+                    <p class="text-[11px] text-gray-500">MP4, MOV, WEBM up to 2GB</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Settings & Presets Toolbar -->
+        <section class="glass-card p-6 rounded-2xl space-y-6">
+            <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i> AI Crop & Caption Presets
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Aspect Ratio Select -->
+                <div class="space-y-2">
+                    <label class="text-xs text-gray-400 font-medium">Target Output Format</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button class="p-2.5 rounded-xl border border-purple-500 bg-purple-500/10 text-white text-xs font-semibold flex items-center justify-center gap-1.5">
+                            <i data-lucide="smartphone" class="w-4 h-4 text-purple-400"></i> 9:16 Shorts
+                        </button>
+                        <button class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white hover:border-gray-700 text-xs font-semibold flex items-center justify-center gap-1.5">
+                            <i data-lucide="square" class="w-4 h-4"></i> 1:1 Square
+                        </button>
+                        <button class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white hover:border-gray-700 text-xs font-semibold flex items-center justify-center gap-1.5">
+                            <i data-lucide="monitor" class="w-4 h-4"></i> 16:9 Original
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Auto Speaker Tracking -->
+                <div class="space-y-2">
+                    <label class="text-xs text-gray-400 font-medium">Face Tracking & Dynamic Crop</label>
+                    <div class="p-3 rounded-xl border border-brand-border bg-brand-dark/50 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="user-check" class="w-4 h-4 text-purple-400"></i>
+                            <span class="text-xs text-gray-200 font-medium">Auto Active Speaker Framing</span>
+                        </div>
+                        <input type="checkbox" checked class="w-4 h-4 accent-purple-600 rounded cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Subtitle Style -->
+                <div class="space-y-2">
+                    <label class="text-xs text-gray-400 font-medium">Auto-Captions Preset</label>
+                    <select class="w-full bg-brand-dark/90 text-gray-200 border border-brand-border rounded-xl px-3 py-2.5 text-xs font-medium focus:outline-none focus:border-purple-500">
+                        <option>🔥 Alex Hormozi Style (Animated Yellow/Green)</option>
+                        <option>✨ Minimalist Clean White</option>
+                        <option>💥 High Impact Pop-Up Words</option>
+                        <option>🚫 No Captions</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Generated Clips Gallery (Klap Style Cards) -->
+        <section class="space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-white">Generated AI Clips</h2>
+                    <p class="text-xs text-gray-400">Auto-extracted high viral potential moments from your video</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg border border-brand-border bg-brand-card">
+                        Sort by: Virality Score
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- Clip Card 1 -->
+                <div class="glass-card rounded-2xl overflow-hidden transition duration-300 flex flex-col group">
+                    <!-- Video Preview Aspect Ratio Box (9:16) -->
+                    <div class="relative bg-black aspect-[9/16] overflow-hidden flex items-center justify-center">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80" alt="Short Preview">
+                        
+                        <!-- Overlay Badges -->
+                        <div class="absolute top-3 left-3 bg-red-500/90 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow">
+                            🔥 98% Virality Score
+                        </div>
+                        <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-gray-300 text-[10px] font-medium px-2 py-0.5 rounded">
+                            00:45
+                        </div>
+
+                        <!-- Caption Overlay Mockup -->
+                        <div class="absolute bottom-12 px-4 text-center">
+                            <span class="bg-yellow-400 text-black font-extrabold text-sm px-2 py-0.5 uppercase tracking-wide rounded">
+                                THE SECRET TO SUCCESS!
+                            </span>
+                        </div>
+
+                        <!-- Play Button Hover Overlay -->
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <div class="w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition">
+                                <i data-lucide="play" class="w-5 h-5 fill-current ml-0.5"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details & Actions -->
+                    <div class="p-4 flex-1 flex flex-col justify-between space-y-4">
+                        <div class="space-y-1">
+                            <h4 class="text-sm font-semibold text-white line-clamp-1">How to build a million dollar habit</h4>
+                            <p class="text-xs text-gray-400">Includes auto-captions & face-tracking crop</p>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2 border-t border-brand-border">
+                            <button class="flex-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-medium text-xs py-2 rounded-xl border border-purple-500/30 transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Clip
+                            </button>
+                            <button class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white font-semibold text-xs px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clip Card 2 -->
+                <div class="glass-card rounded-2xl overflow-hidden transition duration-300 flex flex-col group">
+                    <div class="relative bg-black aspect-[9/16] overflow-hidden flex items-center justify-center">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80" alt="Short Preview">
+                        
+                        <div class="absolute top-3 left-3 bg-purple-600/90 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow">
+                            ⚡ 92% Virality Score
+                        </div>
+                        <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-gray-300 text-[10px] font-medium px-2 py-0.5 rounded">
+                            00:30
+                        </div>
+
+                        <div class="absolute bottom-12 px-4 text-center">
+                            <span class="bg-emerald-400 text-black font-extrabold text-sm px-2 py-0.5 uppercase tracking-wide rounded">
+                                NEVER DO THIS AGAIN!
+                            </span>
+                        </div>
+
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <div class="w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition">
+                                <i data-lucide="play" class="w-5 h-5 fill-current ml-0.5"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 flex-1 flex flex-col justify-between space-y-4">
+                        <div class="space-y-1">
+                            <h4 class="text-sm font-semibold text-white line-clamp-1">The biggest mistake beginners make</h4>
+                            <p class="text-xs text-gray-400">Includes auto-captions & face-tracking crop</p>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2 border-t border-brand-border">
+                            <button class="flex-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-medium text-xs py-2 rounded-xl border border-purple-500/30 transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Clip
+                            </button>
+                            <button class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white font-semibold text-xs px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clip Card 3 -->
+                <div class="glass-card rounded-2xl overflow-hidden transition duration-300 flex flex-col group">
+                    <div class="relative bg-black aspect-[9/16] overflow-hidden flex items-center justify-center">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-80" alt="Short Preview">
+                        
+                        <div class="absolute top-3 left-3 bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow">
+                            🚀 87% Virality Score
+                        </div>
+                        <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-gray-300 text-[10px] font-medium px-2 py-0.5 rounded">
+                            00:58
+                        </div>
+
+                        <div class="absolute bottom-12 px-4 text-center">
+                            <span class="bg-pink-500 text-white font-extrabold text-sm px-2 py-0.5 uppercase tracking-wide rounded">
+                                MIND-BLOWING TIP!
+                            </span>
+                        </div>
+
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <div class="w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition">
+                                <i data-lucide="play" class="w-5 h-5 fill-current ml-0.5"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 flex-1 flex flex-col justify-between space-y-4">
+                        <div class="space-y-1">
+                            <h4 class="text-sm font-semibold text-white line-clamp-1">Mindset shift for rapid growth</h4>
+                            <p class="text-xs text-gray-400">Includes auto-captions & face-tracking crop</p>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2 border-t border-brand-border">
+                            <button class="flex-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-medium text-xs py-2 rounded-xl border border-purple-500/30 transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Clip
+                            </button>
+                            <button class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white font-semibold text-xs px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-brand-border py-6 text-center text-xs text-gray-500 mt-auto">
+        <p>© 2026 Flux AI Inc. Crafted for content creators.</p>
+    </footer>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
 </html>
