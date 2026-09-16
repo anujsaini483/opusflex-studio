@@ -155,12 +155,18 @@
                         </select>
                     </div>
 
-                    <!-- Custom Duration Input Box (Hidden by default, shown when custom selected) -->
+                    <!-- Direct Custom Duration Range Slider (No text boxes) -->
                     <div id="customDurationBox" class="p-3 bg-slate-950 rounded-xl border border-violet-500/40 space-y-2">
-                        <label class="block text-gray-300 font-medium">Custom Length (Seconds)</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="customMinSec" placeholder="Start (Sec)" min="0" class="w-1/2 bg-slate-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-violet-500">
-                            <input type="number" id="customMaxSec" placeholder="End (Sec)" min="1" class="w-1/2 bg-slate-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-violet-500">
+                        <div class="flex justify-between items-center text-gray-300 font-medium text-[11px]">
+                            <span>Custom Length Adjust</span>
+                            <span id="customSliderValue" class="text-violet-400 font-mono font-bold">45 Seconds</span>
+                        </div>
+                        <div class="relative flex items-center">
+                            <input type="range" id="customDurationSlider" min="5" max="180" value="45" step="5" class="w-full accent-violet-500 bg-gray-800 h-2 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div class="flex justify-between text-[10px] text-gray-500 font-mono">
+                            <span>5s</span>
+                            <span>180s</span>
                         </div>
                     </div>
 
