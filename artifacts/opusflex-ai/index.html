@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flux AI - Long Video to Shorts Studio</title>
+    <title>Flux AI - Professional Long Video to Shorts Studio</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -21,106 +25,133 @@
                             border: 'rgba(255, 255, 255, 0.08)'
                         }
                     },
-                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #0b0f19; color: #f3f4f6; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass-card { background: rgba(19, 25, 39, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-card {
+            background: rgba(19, 25, 39, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <!-- Navbar -->
+    <!-- Header / Navbar -->
     <header class="border-b border-brand-border bg-brand-dark/80 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-extrabold text-white text-xl shadow-lg">F</div>
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-extrabold text-white text-xl shadow-lg">
+                    F
+                </div>
                 <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-purple-400">
-                    FLUX <span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-semibold">Clips Studio</span>
+                    FLUX AI <span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-semibold">Shorts Studio Pro</span>
                 </span>
             </div>
             <div class="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full font-medium flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Engine Active</span>
+                <span>AI Video Processing Engine Ready</span>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8 space-y-8">
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-6 py-8 space-y-8">
 
-        <!-- Top Upload Banner -->
-        <section class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-                <h1 class="text-lg font-bold text-white">Upload Long Video</h1>
-                <p class="text-xs text-gray-400">Select an MP4 file to start generating viral short clips.</p>
+        <!-- 1. VIDEO SOURCE SECTION (Link Paste + Direct Upload) -->
+        <section class="glass-card p-6 rounded-2xl space-y-4">
+            <h2 class="text-xs font-extrabold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="link" class="w-4 h-4 text-purple-400"></i> 1. Choose Video Input Source
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Option A: Paste Video Link -->
+                <div class="space-y-2 bg-brand-dark/50 p-4 rounded-xl border border-brand-border">
+                    <label class="text-xs text-gray-300 font-semibold block">Paste Video URL (MP4 / Direct Link):</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="videoUrlInput" placeholder="https://example.com/sample-video.mp4" 
+                            class="w-full bg-brand-dark text-white border border-brand-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-500">
+                        <button onclick="loadUrlVideo()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1">
+                            <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i> Fetch
+                        </button>
+                    </div>
+                    <span class="text-[10px] text-gray-500 block">* Direct video URL / Sample MP4 direct links supported.</span>
+                </div>
+
+                <!-- Option B: Direct Device Upload -->
+                <div class="space-y-2 bg-brand-dark/50 p-4 rounded-xl border border-brand-border flex flex-col justify-between">
+                    <label class="text-xs text-gray-300 font-semibold block">Upload Local Video File:</label>
+                    <input type="file" id="videoInput" accept="video/*" class="hidden" onchange="loadUserVideo(event)">
+                    <button onclick="document.getElementById('videoInput').click()" 
+                        class="w-full bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/30 text-purple-300 font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+                        <i data-lucide="upload-cloud" class="w-4 h-4 text-purple-400"></i> Browse MP4 / MOV File
+                    </button>
+                    <span id="fileNameLabel" class="text-[10px] text-gray-400 block truncate text-center">No file chosen yet</span>
+                </div>
             </div>
-            <input type="file" id="videoInput" accept="video/*" class="hidden" onchange="loadUserVideo(event)">
-            <button onclick="document.getElementById('videoInput').click()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white font-semibold text-xs px-5 py-3 rounded-xl shadow-lg transition flex items-center gap-2">
-                <i data-lucide="upload" class="w-4 h-4"></i> Select Video File
-            </button>
         </section>
 
-        <!-- Hidden Native Video Element -->
-        <video id="hiddenSourceVideo" class="hidden" crossorigin="anonymous" playsinline></video>
+        <!-- 2. SETTINGS & CUSTOMIZATION SECTION -->
+        <section class="glass-card p-6 rounded-2xl space-y-6">
+            <h2 class="text-xs font-extrabold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i> 2. Clip Controls & Customization
+            </h2>
 
-        <!-- Main Studio (Always Visible Now) -->
-        <section id="editorStudio" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Left: Live Preview Canvas -->
-            <div class="lg:col-span-1 flex flex-col items-center glass-card p-6 rounded-2xl space-y-4">
-                <h3 class="text-xs font-bold text-gray-300 uppercase self-start flex items-center gap-2">
-                    <i data-lucide="eye" class="w-4 h-4 text-purple-400"></i> Live Preview Screen
-                </h3>
-
-                <div class="relative overflow-hidden rounded-xl border border-purple-500/40 shadow-2xl bg-black flex items-center justify-center">
-                    <canvas id="exportCanvas" width="360" height="640" class="w-[270px] h-[480px] bg-black"></canvas>
-                </div>
-
-                <button id="playBtn" onclick="togglePlayPause()" class="w-full bg-purple-600/20 border border-purple-500/30 text-purple-300 font-semibold text-xs py-2.5 rounded-xl hover:bg-purple-600/30 transition flex items-center justify-center gap-2">
-                    <i data-lucide="play" class="w-4 h-4"></i> Play / Pause Preview
-                </button>
-            </div>
-
-            <!-- Right: Options Controls -->
-            <div class="lg:col-span-2 glass-card p-6 rounded-2xl space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                <!-- Aspect Ratio -->
+                <!-- Aspect Ratio Selection -->
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-gray-300 uppercase">1. Select Aspect Ratio</label>
-                    <div class="grid grid-cols-3 gap-3">
-                        <button id="ratio916" onclick="setAspectRatio('9:16')" class="p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold">📱 9:16 Shorts</button>
-                        <button id="ratio11" onclick="setAspectRatio('1:1')" class="p-3 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">🔲 1:1 Square</button>
-                        <button id="ratio169" onclick="setAspectRatio('16:9')" class="p-3 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">🖥️ 16:9 Landscape</button>
+                    <label class="text-xs font-bold text-gray-300 uppercase tracking-wider block">Aspect Ratio (आस्पेक्ट रेशियो):</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="ratio916" onclick="setAspectRatio('9:16')" class="p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold transition">📱 9:16 Shorts</button>
+                        <button id="ratio11" onclick="setAspectRatio('1:1')" class="p-3 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold transition">🔲 1:1 Square</button>
+                        <button id="ratio169" onclick="setAspectRatio('16:9')" class="p-3 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold transition">🖥️ 16:9 Wide</button>
                     </div>
                 </div>
 
-                <!-- Clip Duration -->
-                <div class="space-y-2 border-t border-brand-border pt-4">
-                    <label class="text-xs font-bold text-gray-300 uppercase flex justify-between">
-                        <span>2. Clip Duration</span>
-                        <span id="selectedDurLabel" class="text-purple-400 font-bold">15 Seconds</span>
-                    </label>
-                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                        <button id="dur15" onclick="setDuration(15)" class="p-2.5 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold">⚡ 15s</button>
-                        <button id="dur20" onclick="setDuration(20)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">⏱️ 20s</button>
-                        <button id="dur30" onclick="setDuration(30)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">🔥 30s</button>
-                        <button id="dur60" onclick="setDuration(60)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">🎬 60s</button>
-                        <button id="durCustomBtn" onclick="setDuration('custom')" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">⚙️ Custom</button>
+                <!-- Clip Duration Options -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-gray-300 uppercase tracking-wider">Clip Duration (लम्बाई):</label>
+                        <span id="durDisplayLabel" class="text-xs font-bold text-purple-400">15 Seconds</span>
+                    </div>
+                    <div class="grid grid-cols-5 gap-2">
+                        <button id="dur15" onclick="setDuration(15)" class="p-2.5 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold">15s</button>
+                        <button id="dur20" onclick="setDuration(20)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">20s</button>
+                        <button id="dur30" onclick="setDuration(30)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">30s</button>
+                        <button id="dur60" onclick="setDuration(60)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">60s</button>
+                        <button id="durCustomBtn" onclick="setDuration('custom')" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">Custom</button>
                     </div>
 
-                    <div id="customDurBox" class="hidden flex items-center gap-3 bg-brand-dark/60 p-3 rounded-xl border border-brand-border mt-2">
-                        <span class="text-xs text-gray-300">Custom Duration (Sec):</span>
-                        <input type="number" id="customDurInput" min="5" max="300" value="45" oninput="updateCustomDuration()" class="w-20 bg-brand-dark text-white border border-purple-500 rounded-lg px-2 py-1 text-xs text-center font-bold">
+                    <!-- Custom Duration Input Box -->
+                    <div id="customDurBox" class="hidden flex items-center justify-between bg-brand-dark/60 p-3 rounded-xl border border-brand-border mt-2">
+                        <span class="text-xs text-gray-300 font-medium">Type Seconds:</span>
+                        <input type="number" id="customDurInput" min="5" max="300" value="45" oninput="updateCustomDuration()" 
+                            class="w-24 bg-brand-dark text-white border border-purple-500 rounded-lg px-2 py-1 text-xs text-center font-bold">
                     </div>
                 </div>
 
                 <!-- Number of Clips -->
-                <div class="space-y-2 border-t border-brand-border pt-4">
-                    <label class="text-xs font-bold text-gray-300 uppercase">3. Number of Clips</label>
-                    <div class="grid grid-cols-4 gap-3">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-300 uppercase tracking-wider block">Number of Clips (क्लिप्स की संख्या):</label>
+                    <div class="grid grid-cols-4 gap-2">
                         <button id="cnt3" onclick="setClipCount(3)" class="p-2.5 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold">3 Clips</button>
                         <button id="cnt4" onclick="setClipCount(4)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">4 Clips</button>
                         <button id="cnt5" onclick="setClipCount(5)" class="p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold">5 Clips</button>
@@ -128,63 +159,189 @@
                     </div>
                 </div>
 
-                <!-- Captions -->
-                <div class="space-y-3 border-t border-brand-border pt-4">
-                    <label class="text-xs font-bold text-gray-300 uppercase">4. Captions & Styling</label>
-                    <input type="text" id="captionTextInput" value="VIRAL SHORT VIDEO CLIP!" oninput="updateSubtitles()" class="w-full bg-brand-dark text-yellow-400 font-extrabold border border-brand-border rounded-xl px-4 py-2.5 text-xs">
-                </div>
+                <!-- Caption / Subtitles Controls -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-gray-300 uppercase tracking-wider block">Captions & Subtitles Engine:</label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-gray-400">Enable Captions</span>
+                            <input type="checkbox" id="captionToggle" checked onchange="toggleCaptions()" class="w-4 h-4 accent-purple-500 rounded cursor-pointer">
+                        </div>
+                    </div>
 
-                <!-- Action Button -->
-                <div class="border-t border-brand-border pt-4">
-                    <button onclick="generateClipsGallery()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-sm py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
-                        <i data-lucide="scissors" class="w-4 h-4"></i> Generate <span id="btnClipCountLabel">3</span> Clips (<span id="btnDurLabel">15s</span> Each)
-                    </button>
+                    <div id="captionControlsArea" class="space-y-2">
+                        <button onclick="startVoiceRecognition()" class="w-full bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600/30 font-semibold text-xs py-2 rounded-xl transition flex items-center justify-center gap-2">
+                            <i data-lucide="mic" class="w-3.5 h-3.5 text-emerald-400"></i> 🎙️ Auto-Generate Captions from Voice
+                        </button>
+                        
+                        <input type="text" id="captionTextInput" value="VIRAL SHORT CLIP!" oninput="updateCaptionOverlay()" 
+                            class="w-full bg-brand-dark text-yellow-400 font-extrabold border border-brand-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-500">
+                        
+                        <div class="grid grid-cols-3 gap-2 pt-1">
+                            <button onclick="setCaptionStyle('hormozi')" class="p-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[11px] font-bold">Hormozi</button>
+                            <button onclick="setCaptionStyle('minimal')" class="p-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-[11px] font-bold">Minimal</button>
+                            <button onclick="setCaptionStyle('neon')" class="p-1.5 rounded-lg bg-pink-500/10 border border-pink-500/30 text-pink-400 text-[11px] font-bold">Neon Pink</button>
+                        </div>
+                    </div>
                 </div>
 
             </div>
         </section>
 
-        <!-- Clips Output Grid -->
-        <section id="clipsSection" class="space-y-6 hidden">
-            <h2 class="text-lg font-bold text-white">Generated Clips Grid</h2>
-            <div id="clipsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        <!-- 3. FULL ORIGINAL VIDEO PREVIEW SECTION -->
+        <section class="glass-card p-6 rounded-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-extrabold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="video" class="w-4 h-4 text-purple-400"></i> 3. Full Original Video & Live Frame Box
+                </h2>
+                <span id="speechStatus" class="text-[11px] text-gray-400 font-medium">Video Player Ready</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <!-- Native Video Player -->
+                <div class="space-y-2">
+                    <span class="text-[11px] text-gray-400 font-semibold block">Full Video Stream:</span>
+                    <div class="bg-black rounded-xl overflow-hidden border border-brand-border flex items-center justify-center">
+                        <video id="sourceVideo" controls class="w-full h-[320px] object-contain"></video>
+                    </div>
+                </div>
+
+                <!-- Dynamic Canvas Preview with Aspect Ratio & Captions -->
+                <div class="space-y-2 flex flex-col items-center">
+                    <span class="text-[11px] text-gray-400 font-semibold self-start">Formatted Crop Preview (Live Canvas):</span>
+                    <div class="bg-black rounded-xl overflow-hidden border border-purple-500/40 shadow-xl flex items-center justify-center">
+                        <canvas id="cropCanvas" width="360" height="640" class="w-[180px] h-[320px] bg-black"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. GENERATE CLIPS BUTTON (MAIN ACTION CTA) -->
+        <div class="text-center">
+            <button onclick="generateClipsGrid()" class="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:opacity-95 text-white font-extrabold text-sm py-4 rounded-xl shadow-xl shadow-purple-600/30 transition flex items-center justify-center gap-2">
+                <i data-lucide="scissors" class="w-5 h-5"></i> GENERATE <span id="btnClipCountLabel">3</span> VIRAL CLIPS NOW (<span id="btnDurLabel">15s</span> EACH)
+            </button>
+        </div>
+
+        <!-- 5. GENERATED CLIPS GRID SECTION -->
+        <section id="generatedClipsSection" class="space-y-4 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i data-lucide="film" class="w-5 h-5 text-purple-400"></i> Generated Short Clips Grid
+                    </h2>
+                    <p class="text-xs text-gray-400">Play segment, Export file or Delete to bin below</p>
+                </div>
+                <span id="clipsCounterBadge" class="text-xs bg-purple-500/10 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-full font-bold">
+                    0 Clips Ready
+                </span>
+            </div>
+
+            <div id="clipsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically generated clip cards will be inserted here -->
+            </div>
+        </section>
+
+        <!-- 6. RECENTLY DELETED CLIPS SECTION -->
+        <section id="deletedSection" class="space-y-4 hidden pt-6 border-t border-brand-border">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-extrabold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Recently Deleted Clips (Bin)
+                </h2>
+                <button onclick="clearBin()" class="text-[11px] text-red-400 hover:underline">Empty Bin</button>
+            </div>
+            
+            <div id="deletedGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Dynamically populated deleted cards -->
+            </div>
         </section>
 
     </main>
 
+    <!-- Footer -->
+    <footer class="border-t border-brand-border py-4 text-center text-xs text-gray-500 mt-auto">
+        <p>© 2026 Flux AI Studio. All browser processing features active.</p>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC ENGINE -->
     <script>
-        const video = document.getElementById('hiddenSourceVideo');
-        const canvas = document.getElementById('exportCanvas');
+        // DOM Elements
+        const video = document.getElementById('sourceVideo');
+        const canvas = document.getElementById('cropCanvas');
         const ctx = canvas.getContext('2d');
 
+        // App States
         let targetDuration = 15;
         let selectedClipCount = 3;
         let currentRatio = '9:16';
-        let animFrame = null;
+        let captionsEnabled = true;
+        let activeCaptionStyle = 'hormozi';
+        let animFrameId = null;
+
+        // Active & Deleted Clips Arrays
+        let activeClips = [];
+        let deletedClips = [];
 
         lucide.createIcons();
 
+        // 1. Load Video from URL Input
+        function loadUrlVideo() {
+            const url = document.getElementById('videoUrlInput').value.trim();
+            if (!url) {
+                alert("कृपया एक वैध वीडियो लिंक पेस्ट करें!");
+                return;
+            }
+            video.src = url;
+            video.crossOrigin = "anonymous";
+            document.getElementById('fileNameLabel').innerText = "Loaded from URL";
+            video.onloadeddata = () => {
+                video.play();
+                startCanvasRenderLoop();
+            };
+        }
+
+        // 2. Load Video from Local File
         function loadUserVideo(e) {
             const file = e.target.files[0];
             if (file) {
                 video.src = URL.createObjectURL(file);
-                video.onloadeddata = () => { setAspectRatio('9:16'); video.play(); renderCanvasLoop(); };
+                document.getElementById('fileNameLabel').innerText = file.name;
+                video.onloadeddata = () => {
+                    video.play();
+                    startCanvasRenderLoop();
+                };
             }
         }
 
+        // 3. Aspect Ratio Control
         function setAspectRatio(ratio) {
             currentRatio = ratio;
-            ['916', '11', '169'].forEach(id => document.getElementById('ratio' + id).className = "p-3 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 text-xs font-bold");
-            if (ratio === '9:16') { canvas.width = 360; canvas.height = 640; document.getElementById('ratio916').className = "p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold"; }
-            else if (ratio === '1:1') { canvas.width = 480; canvas.height = 480; document.getElementById('ratio11').className = "p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold"; }
-            else if (ratio === '16:9') { canvas.width = 640; canvas.height = 360; document.getElementById('ratio169').className = "p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold"; }
-            drawFrame();
+            ['916', '11', '169'].forEach(id => {
+                const btn = document.getElementById('ratio' + id);
+                if (btn) btn.className = "p-3 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold transition";
+            });
+
+            if (ratio === '9:16') {
+                canvas.width = 360; canvas.height = 640;
+                document.getElementById('ratio916').className = "p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold transition";
+            } else if (ratio === '1:1') {
+                canvas.width = 480; canvas.height = 480;
+                document.getElementById('ratio11').className = "p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold transition";
+            } else if (ratio === '16:9') {
+                canvas.width = 640; canvas.height = 360;
+                document.getElementById('ratio169').className = "p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold transition";
+            }
+            drawCanvasFrame();
         }
 
+        // 4. Clip Duration Selector
         function setDuration(dur) {
             const customBox = document.getElementById('customDurBox');
-            ['15', '20', '30', '60'].forEach(id => document.getElementById('dur' + id).className = "p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 text-xs font-bold");
-            document.getElementById('durCustomBtn').className = "p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 text-xs font-bold";
+            ['15', '20', '30', '60'].forEach(id => {
+                const btn = document.getElementById('dur' + id);
+                if (btn) btn.className = "p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold";
+            });
+            document.getElementById('durCustomBtn').className = "p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold";
 
             if (dur === 'custom') {
                 customBox.classList.remove('hidden');
@@ -195,58 +352,333 @@
                 targetDuration = dur;
                 document.getElementById('dur' + dur).className = "p-2.5 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold";
             }
-            document.getElementById('selectedDurLabel').innerText = targetDuration + " Seconds";
+
+            document.getElementById('durDisplayLabel').innerText = targetDuration + " Seconds";
             document.getElementById('btnDurLabel').innerText = targetDuration + "s";
         }
 
         function updateCustomDuration() {
             targetDuration = parseInt(document.getElementById('customDurInput').value) || 15;
-            document.getElementById('selectedDurLabel').innerText = targetDuration + " Seconds";
+            document.getElementById('durDisplayLabel').innerText = targetDuration + " Seconds";
             document.getElementById('btnDurLabel').innerText = targetDuration + "s";
         }
 
+        // 5. Clip Count Selector
         function setClipCount(count) {
             selectedClipCount = count;
-            [3, 4, 5, 6].forEach(num => document.getElementById('cnt' + num).className = "p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 text-xs font-bold");
+            [3, 4, 5, 6].forEach(num => {
+                const btn = document.getElementById('cnt' + num);
+                if (btn) btn.className = "p-2.5 rounded-xl border border-brand-border bg-brand-dark/50 text-gray-400 hover:text-white text-xs font-bold";
+            });
             document.getElementById('cnt' + count).className = "p-2.5 rounded-xl border border-purple-500 bg-purple-500/20 text-white text-xs font-bold";
             document.getElementById('btnClipCountLabel').innerText = count;
         }
 
-        function drawFrame() {
-            if (!video.videoWidth) return;
-            const vw = video.videoWidth, vh = video.videoHeight, cw = canvas.width, ch = canvas.height;
-            ctx.clearRect(0, 0, cw, ch);
-            let srcWidth = vh * (cw / ch), srcHeight = vh, srcX = (vw - srcWidth) / 2, srcY = 0;
-            if (srcWidth > vw) { srcWidth = vw; srcHeight = vw / (cw / ch); srcX = 0; srcY = (vh - srcHeight) / 2; }
-            ctx.drawImage(video, srcX, srcY, srcWidth, srcHeight, 0, 0, cw, ch);
+        // 6. Caption Controls
+        function toggleCaptions() {
+            captionsEnabled = document.getElementById('captionToggle').checked;
+            document.getElementById('captionControlsArea').style.opacity = captionsEnabled ? "1" : "0.4";
+            drawCanvasFrame();
         }
 
-        function renderCanvasLoop() { if (!video.paused && !video.ended) { drawFrame(); animFrame = requestAnimationFrame(renderCanvasLoop); } }
-        function togglePlayPause() { if (video.paused) { video.play(); renderCanvasLoop(); } else { video.pause(); cancelAnimationFrame(animFrame); } }
-        function updateSubtitles() { drawFrame(); }
+        function setCaptionStyle(style) {
+            activeCaptionStyle = style;
+            drawCanvasFrame();
+        }
 
-        function generateClipsGallery() {
-            if (!video.src) { alert("कृपया पहले एक वीडियो सेलेक्ट/अपलोड करें!"); return; }
-            const clipsSection = document.getElementById('clipsSection');
-            const clipsContainer = document.getElementById('clipsContainer');
+        function updateCaptionOverlay() { drawCanvasFrame(); }
+
+        // Speech-to-Text Recognition Engine
+        function startVoiceRecognition() {
+            const statusLabel = document.getElementById('speechStatus');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                alert("Speech recognition is best supported in Chrome / Edge browser!");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.lang = 'hi-IN';
+
+            statusLabel.innerText = "🎙️ Listening audio...";
+            statusLabel.className = "text-[11px] text-yellow-400 font-bold animate-pulse";
+
+            video.currentTime = 0;
+            video.play();
+            startCanvasRenderLoop();
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                document.getElementById('captionTextInput').value = transcript;
+                drawCanvasFrame();
+            };
+
+            recognition.onend = () => {
+                statusLabel.innerText = "Captions Generated!";
+                statusLabel.className = "text-[11px] text-emerald-400 font-bold";
+            };
+
+            recognition.start();
+        }
+
+        // 7. Live Canvas Rendering Loop
+        function drawCanvasFrame() {
+            if (!video.videoWidth) return;
+
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            const cw = canvas.width;
+            const ch = canvas.height;
+
+            ctx.clearRect(0, 0, cw, ch);
+
+            let srcWidth = vh * (cw / ch);
+            let srcHeight = vh;
+            let srcX = (vw - srcWidth) / 2;
+            let srcY = 0;
+
+            if (srcWidth > vw) {
+                srcWidth = vw;
+                srcHeight = vw / (cw / ch);
+                srcX = 0;
+                srcY = (vh - srcHeight) / 2;
+            }
+
+            ctx.drawImage(video, srcX, srcY, srcWidth, srcHeight, 0, 0, cw, ch);
+
+            if (captionsEnabled) {
+                drawTextSubtitle(cw, ch);
+            }
+        }
+
+        function drawTextSubtitle(cw, ch) {
+            const text = document.getElementById('captionTextInput').value.toUpperCase();
+            if (!text) return;
+
+            ctx.save();
+            ctx.textAlign = 'center';
+
+            if (activeCaptionStyle === 'hormozi') {
+                ctx.font = '900 20px "Plus Jakarta Sans", sans-serif';
+                const textWidth = ctx.measureText(text).width;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect((cw / 2) - (textWidth / 2) - 10, ch - 120, textWidth + 20, 36);
+                ctx.fillStyle = '#facc15';
+                ctx.fillText(text, cw / 2, ch - 95);
+            } 
+            else if (activeCaptionStyle === 'minimal') {
+                ctx.font = '700 18px "Plus Jakarta Sans", sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 8;
+                ctx.fillText(text, cw / 2, ch - 100);
+            } 
+            else if (activeCaptionStyle === 'neon') {
+                ctx.font = '900 22px "Plus Jakarta Sans", sans-serif';
+                ctx.fillStyle = '#ec4899';
+                ctx.shadowColor = '#ec4899';
+                ctx.shadowBlur = 12;
+                ctx.fillText(text, cw / 2, ch - 100);
+            }
+
+            ctx.restore();
+        }
+
+        function startCanvasRenderLoop() {
+            if (!video.paused && !video.ended) {
+                drawCanvasFrame();
+                animFrameId = requestAnimationFrame(startCanvasRenderLoop);
+            }
+        }
+
+        // 8. Generate Clips Grid & State Management
+        function generateClipsGrid() {
+            if (!video.src) {
+                alert("कृपया पहले एक वीडियो अपलोड करें या वीडियो का डायरेक्ट URL लिंक पेस्ट करें!");
+                return;
+            }
+
+            const clipsSection = document.getElementById('generatedClipsSection');
             clipsSection.classList.remove('hidden');
 
-            let html = '';
+            activeClips = [];
+            const totalVidDur = video.duration || 120;
+
             for (let i = 0; i < selectedClipCount; i++) {
                 const startTime = i * targetDuration;
-                html += `
-                    <div class="glass-card rounded-2xl p-4 space-y-3 border border-brand-border">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="font-bold text-purple-400">Clip #${i + 1}</span>
-                            <span class="bg-purple-500/10 text-purple-300 font-semibold px-2 py-0.5 rounded border border-purple-500/20">${startTime}s - ${startTime + targetDuration}s</span>
-                        </div>
-                        <button onclick="playClipSegment(${startTime})" class="w-full bg-purple-600/20 text-purple-300 font-bold text-xs py-2 rounded-xl">Play Clip</button>
-                    </div>`;
+                const endTime = Math.min((i + 1) * targetDuration, totalVidDur);
+
+                if (startTime >= totalVidDur) break;
+
+                activeClips.push({
+                    id: Date.now() + i,
+                    clipNum: i + 1,
+                    startTime: Math.floor(startTime),
+                    endTime: Math.floor(endTime),
+                    duration: targetDuration,
+                    caption: document.getElementById('captionTextInput').value
+                });
             }
-            clipsContainer.innerHTML = html;
+
+            renderActiveClipsUI();
+            clipsSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        function playClipSegment(start) { video.currentTime = start; video.play(); renderCanvasLoop(); }
+        function renderActiveClipsUI() {
+            const grid = document.getElementById('clipsGrid');
+            const badge = document.getElementById('clipsCounterBadge');
+            badge.innerText = `${activeClips.length} Clips Ready`;
+
+            if (activeClips.length === 0) {
+                grid.innerHTML = `<p class="text-xs text-gray-500 col-span-3 text-center">No active clips. Generate or restore deleted clips.</p>`;
+                return;
+            }
+
+            let html = '';
+            activeClips.forEach((clip) => {
+                html += `
+                    <div id="clip_card_${clip.id}" class="glass-card rounded-2xl p-4 space-y-3 border border-brand-border hover:border-purple-500/40 transition">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-extrabold text-purple-400">Clip #${clip.clipNum}</span>
+                            <span class="bg-purple-500/10 text-purple-300 font-semibold px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                                ⏱️ ${clip.startTime}s - ${clip.endTime}s (${clip.duration}s)
+                            </span>
+                        </div>
+
+                        <div class="bg-brand-dark/80 rounded-xl p-2.5 text-center text-xs text-yellow-400 font-bold truncate border border-brand-border">
+                            💬 "${clip.caption}"
+                        </div>
+
+                        <div class="flex gap-2 pt-2">
+                            <button onclick="playClipSegment(${clip.startTime}, ${clip.endTime})" class="flex-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-bold text-xs py-2 rounded-xl border border-purple-500/30 transition flex items-center justify-center gap-1">
+                                <i data-lucide="play" class="w-3.5 h-3.5"></i> Play
+                            </button>
+                            <button onclick="exportClipSegment(${clip.startTime}, ${clip.duration}, ${clip.clipNum})" class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white font-bold text-xs py-2 rounded-xl transition flex items-center justify-center gap-1 shadow">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export
+                            </button>
+                            <button onclick="deleteClipToBin(${clip.id})" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 p-2 rounded-xl transition">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // 9. Play Clip Segment
+        function playClipSegment(start, end) {
+            video.currentTime = start;
+            video.play();
+            startCanvasRenderLoop();
+
+            const checkTimeStop = () => {
+                if (video.currentTime >= end) {
+                    video.pause();
+                    video.removeEventListener('timeupdate', checkTimeStop);
+                }
+            };
+            video.addEventListener('timeupdate', checkTimeStop);
+        }
+
+        // 10. Export / Download Clip File
+        function exportClipSegment(startTime, duration, clipNum) {
+            alert(`⏳ Preparing Clip #${clipNum} (${duration}s) for download... Please wait while rendering!`);
+            
+            video.currentTime = startTime;
+            video.play();
+            startCanvasRenderLoop();
+
+            const stream = canvas.captureStream(30);
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            const chunks = [];
+
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `FluxClip_${clipNum}_${duration}s.webm`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+
+            mediaRecorder.start();
+
+            setTimeout(() => {
+                mediaRecorder.stop();
+                video.pause();
+            }, duration * 1000);
+        }
+
+        // 11. Delete to Bin & Restore Logic
+        function deleteClipToBin(clipId) {
+            const clipIndex = activeClips.findIndex(c => c.id === clipId);
+            if (clipIndex !== -1) {
+                const removedClip = activeClips.splice(clipIndex, 1)[0];
+                deletedClips.push(removedClip);
+                
+                renderActiveClipsUI();
+                renderDeletedClipsUI();
+            }
+        }
+
+        function restoreClipFromBin(clipId) {
+            const clipIndex = deletedClips.findIndex(c => c.id === clipId);
+            if (clipIndex !== -1) {
+                const restoredClip = deletedClips.splice(clipIndex, 1)[0];
+                activeClips.push(restoredClip);
+                activeClips.sort((a, b) => a.clipNum - b.clipNum);
+
+                renderActiveClipsUI();
+                renderDeletedClipsUI();
+            }
+        }
+
+        function renderDeletedClipsUI() {
+            const deletedSection = document.getElementById('deletedSection');
+            const grid = document.getElementById('deletedGrid');
+
+            if (deletedClips.length > 0) {
+                deletedSection.classList.remove('hidden');
+            } else {
+                deletedSection.classList.add('hidden');
+                return;
+            }
+
+            let html = '';
+            deletedClips.forEach(clip => {
+                html += `
+                    <div class="glass-card p-3 rounded-xl border border-red-500/20 flex items-center justify-between text-xs">
+                        <div>
+                            <span class="font-bold text-gray-300">Clip #${clip.clipNum} (${clip.duration}s)</span>
+                            <span class="text-[10px] text-gray-500 block">${clip.startTime}s - ${clip.endTime}s</span>
+                        </div>
+                        <button onclick="restoreClipFromBin(${clip.id})" class="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 transition">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Restore
+                        </button>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function clearBin() {
+            deletedClips = [];
+            renderDeletedClipsUI();
+        }
     </script>
 </body>
 </html>
