@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  Activity,
   Check,
   ChevronDown,
   CloudUpload,
@@ -219,7 +220,7 @@ function createDemoVideo() {
   });
 }
 
-export default function App() {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -241,7 +242,7 @@ function Studio() {
   const clipSourceUrlsRef = useRef<Record<number, string>>({});
   const renderedVideosRef = useRef<Record<number, RenderedVideo>>({});
   const audioGraphsRef = useRef(new WeakMap<HTMLVideoElement, AudioGraph>());
-
+  
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -257,7 +258,7 @@ function Studio() {
   const [captionText, setCaptionText] = useState('Make the boring part visible');
   const [captionWords, setCaptionWords] = useState<CaptionWord[]>([]);
   const [captionPosition, setCaptionPosition] = useState<CaptionPosition>('bottom');
-  const [captionColor, setCaptionColor] = useState('#ffffff');
+  const [captionColor, setCaptionColor] = useState('#000000');
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [recentClips, setRecentClips] = useState<Clip[]>(readRecentClips);
@@ -953,3 +954,5 @@ function PanelTitle({ label, title }: { label: string; title: string }) {
     </div>
   );
 }
+
+export default App;
