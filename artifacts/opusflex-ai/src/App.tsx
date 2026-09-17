@@ -217,7 +217,7 @@ export default function App() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
 
-        {/* 1. TOP VIDEO PLAYER CARD WITH YOUTUBE STYLE RED PROGRESS BAR */}
+        {/* 1. TOP VIDEO PLAYER CARD */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] overflow-hidden shadow-2xl">
           <div className="relative bg-black aspect-[16/9] w-full flex items-center justify-center">
             <video 
@@ -248,7 +248,6 @@ export default function App() {
               </button>
             </div>
             
-            {/* YouTube Style Red Progress Bar */}
             <div 
               className="relative h-2 bg-gray-800 rounded-full cursor-pointer overflow-hidden group"
               onClick={(e) => {
@@ -326,17 +325,17 @@ export default function App() {
           {/* Left Column */}
           <div className="space-y-5">
             
-            {/* RATIO BOX */}
+            {/* RATIO BOX WITH PROPER SHAPED BOXES (9:16 vertical, 16:9 landscape, 1:1 square) */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Ratio</h2>
               <div className="grid grid-cols-6 gap-2">
                 {[
-                  { id: '9:16', label: 'Vertical' },
-                  { id: '16:9', label: 'Landscape' },
-                  { id: '1:1', label: 'Square' },
-                  { id: '4:5', label: 'Portrait' },
-                  { id: '3:4', label: 'Portrait' },
-                  { id: 'more', label: 'More' },
+                  { id: '9:16', label: 'Vertical', shapeClass: 'w-3.5 h-6' },
+                  { id: '16:9', label: 'Landscape', shapeClass: 'w-6 h-3.5' },
+                  { id: '1:1', label: 'Square', shapeClass: 'w-4 h-4' },
+                  { id: '4:5', label: 'Portrait', shapeClass: 'w-4 h-5' },
+                  { id: '3:4', label: 'Portrait', shapeClass: 'w-4.5 h-6' },
+                  { id: 'more', label: 'More', shapeClass: 'w-5 h-4' },
                 ].map((item) => (
                   <button 
                     key={item.id}
@@ -347,7 +346,7 @@ export default function App() {
                         : 'bg-[#07090e] border-gray-800 text-gray-400 hover:text-gray-200'
                     }`}
                   >
-                    <div className={`w-3.5 h-5 border rounded-sm mb-1 ${ratio === item.id ? 'border-purple-400 bg-purple-400/20' : 'border-gray-600'}`} />
+                    <div className={`border rounded-sm mb-1.5 flex items-center justify-center ${item.shapeClass} ${ratio === item.id ? 'border-purple-400 bg-purple-400/20' : 'border-gray-600'}`} />
                     <span className="font-semibold text-[10px]">{item.id}</span>
                     <span className="text-[9px] opacity-70 scale-90">{item.label}</span>
                   </button>
@@ -355,7 +354,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* CAPTIONS & SUBTITLES BOX (Fixed Toggle Overflow Inside Box) */}
+            {/* CAPTIONS & SUBTITLES BOX (Strict Overflow Hidden for Toggle Dots) */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Captions & Subtitles</h2>
               
@@ -364,9 +363,9 @@ export default function App() {
                   <span className="text-gray-300">Auto Captions</span>
                   <div 
                     onClick={() => setAutoCaptions(!autoCaptions)}
-                    className={`w-11 h-6 flex items-center rounded-full p-0.5 cursor-pointer transition-colors ${autoCaptions ? 'bg-purple-600' : 'bg-gray-800'}`}
+                    className={`relative w-11 h-6 flex items-center rounded-full p-0.5 cursor-pointer transition-colors overflow-hidden ${autoCaptions ? 'bg-purple-600' : 'bg-gray-800'}`}
                   >
-                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${autoCaptions ? 'translate-x-5' : 'translate-x-0'}`} />
+                    <div className={`absolute w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-200 ${autoCaptions ? 'translate-x-5' : 'translate-x-0.5'}`} />
                   </div>
                 </div>
 
@@ -384,9 +383,9 @@ export default function App() {
                   <span className="text-gray-300">Subtitles</span>
                   <div 
                     onClick={() => setSubtitlesEnabled(!subtitlesEnabled)}
-                    className={`w-11 h-6 flex items-center rounded-full p-0.5 cursor-pointer transition-colors ${subtitlesEnabled ? 'bg-purple-600' : 'bg-gray-800'}`}
+                    className={`relative w-11 h-6 flex items-center rounded-full p-0.5 cursor-pointer transition-colors overflow-hidden ${subtitlesEnabled ? 'bg-purple-600' : 'bg-gray-800'}`}
                   >
-                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${subtitlesEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                    <div className={`absolute w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-200 ${subtitlesEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
                   </div>
                 </div>
 
