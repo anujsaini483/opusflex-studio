@@ -13,8 +13,7 @@ import {
   SlidersHorizontal,
   Trash2,
   Edit3,
-  X,
-  FileVideo
+  X
 } from 'lucide-react';
 
 type RatioType = '9:16' | '16:9' | '1:1' | '4:5' | '3:4' | 'more';
@@ -57,7 +56,7 @@ export default function App() {
 
   const [ratio, setRatio] = useState<RatioType>('9:16');
   const [lengthPreset, setLengthPreset] = useState<LengthType>('30-45');
-  const [customLengthSec, setCustomLengthSec] = useState(30); // 1s to 120s
+  const [customLengthSec, setCustomLengthSec] = useState(30);
   const [showLengthModal, setShowLengthModal] = useState(false);
 
   const [autoCaptions, setAutoCaptions] = useState(true);
@@ -74,7 +73,6 @@ export default function App() {
   const [clips, setClips] = useState<GeneratedClip[]>(initialClips);
   const [toast, setToast] = useState('');
 
-  // Modal states for actions on clips
   const [previewClip, setPreviewClip] = useState<GeneratedClip | null>(null);
   const [renameClipTarget, setRenameClipTarget] = useState<GeneratedClip | null>(null);
   const [newTitleInput, setNewTitleInput] = useState('');
@@ -127,7 +125,7 @@ export default function App() {
     setVideoTitle(file.name);
     setVideoAuthor('Local Upload');
     setPlaying(false);
-    setToast('वीडियो सफलताપूर्व अपलोड हो गया!');
+    setToast('वीडियो सफलतापूर्वक अपलोड हो गया!');
   };
 
   const formatTime = (secs: number) => {
@@ -219,7 +217,7 @@ export default function App() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
 
-        {/* 1. TOP VIDEO PLAYER CARD */}
+        {/* 1. TOP VIDEO PLAYER CARD WITH YOUTUBE STYLE RED PROGRESS BAR */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] overflow-hidden shadow-2xl">
           <div className="relative bg-black aspect-[16/9] w-full flex items-center justify-center">
             <video 
@@ -250,8 +248,9 @@ export default function App() {
               </button>
             </div>
             
+            {/* YouTube Style Red Progress Bar */}
             <div 
-              className="relative h-2 bg-gray-800 rounded-full cursor-pointer overflow-hidden"
+              className="relative h-2 bg-gray-800 rounded-full cursor-pointer overflow-hidden group"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -261,7 +260,7 @@ export default function App() {
               }}
             >
               <div 
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all" 
+                className="absolute top-0 left-0 h-full bg-[#ef4444] group-hover:bg-red-500 rounded-full transition-all" 
                 style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }} 
               />
             </div>
@@ -271,9 +270,6 @@ export default function App() {
                 <h2 className="text-sm font-semibold text-white truncate max-w-md">{videoTitle}</h2>
                 <p className="text-xs text-gray-400">{videoAuthor}</p>
               </div>
-              <span className="text-[10px] bg-purple-600/20 text-purple-300 px-2.5 py-1 rounded-full border border-purple-500/30">
-                Live Preview Active
-              </span>
             </div>
           </div>
         </div>
@@ -359,20 +355,19 @@ export default function App() {
               </div>
             </div>
 
-            {/* CAPTIONS & SUBTITLES BOX (Fixed Toggle Overflow) */}
+            {/* CAPTIONS & SUBTITLES BOX (Fixed Toggle Overflow Inside Box) */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Captions & Subtitles</h2>
               
               <div className="space-y-3 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-300">Auto Captions</span>
-                  <button 
-                    type="button"
+                  <div 
                     onClick={() => setAutoCaptions(!autoCaptions)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${autoCaptions ? 'bg-purple-600' : 'bg-gray-800'}`}
+                    className={`w-11 h-6 flex items-center rounded-full p-0.5 cursor-pointer transition-colors ${autoCaptions ? 'bg-purple-600' : 'bg-gray-800'}`}
                   >
-                    <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${autoCaptions ? 'translate-x-5' : 'translate-x-0'}`} />
-                  </button>
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${autoCaptions ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
                 </div>
 
                 <select 
@@ -387,13 +382,12 @@ export default function App() {
 
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-gray-300">Subtitles</span>
-                  <button 
-                    type="button"
+                  <div 
                     onClick={() => setSubtitlesEnabled(!subtitlesEnabled)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${subtitlesEnabled ? 'bg-purple-600' : 'bg-gray-800'}`}
+                    className={`w-11 h-6 flex items-center rounded-full p-0.5 cursor-pointer transition-colors ${subtitlesEnabled ? 'bg-purple-600' : 'bg-gray-800'}`}
                   >
-                    <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${subtitlesEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                  </button>
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${subtitlesEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
                 </div>
 
                 <select 
@@ -426,7 +420,7 @@ export default function App() {
                 ].map((item) => (
                   <button 
                     key={item.id}
-                    onClick={() => { setLengthPreset(item.id as LengthType); }}
+                    onClick={() => setLengthPreset(item.id as LengthType)}
                     className={`py-2.5 px-2 rounded-xl border text-center transition cursor-pointer ${
                       lengthPreset === item.id 
                         ? 'bg-purple-600/20 border-purple-600 text-white shadow' 
@@ -522,7 +516,6 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {/* Eye (Preview) button */}
                   <button 
                     onClick={() => setPreviewClip(clip)}
                     className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer"
@@ -531,7 +524,6 @@ export default function App() {
                     <Eye size={15} />
                   </button>
 
-                  {/* Download button */}
                   <button 
                     onClick={() => handleDownloadClip(clip)}
                     className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer"
@@ -540,7 +532,6 @@ export default function App() {
                     <Download size={15} />
                   </button>
 
-                  {/* Three Dots Menu Button */}
                   <div className="relative">
                     <button 
                       onClick={() => setActiveMenuClipId(activeMenuClipId === clip.id ? null : clip.id)}
@@ -550,7 +541,6 @@ export default function App() {
                       <MoreVertical size={15} />
                     </button>
 
-                    {/* Dropdown Menu for Rename and Delete */}
                     {activeMenuClipId === clip.id && (
                       <div className="absolute right-0 mt-2 w-36 bg-[#131b2e] border border-gray-700 rounded-xl shadow-2xl z-20 py-1.5 text-xs">
                         <button 
