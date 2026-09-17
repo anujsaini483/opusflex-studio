@@ -953,5 +953,3 @@ function PanelTitle({ label, title }: { label: string; title: string }) {
     </div>
   );
 }
-
-export default App;
