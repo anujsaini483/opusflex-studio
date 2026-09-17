@@ -1,61 +1,17 @@
 <!DOCTYPE html>
 <html lang="hi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FLUX CLIPS AI</title>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #080c14; color: #f3f4f6; }
-        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col selection:bg-violet-500 selection:text-white">
-
-    <!-- Header Navigation -->
-    <header class="border-b border-gray-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto px-4 py-3.5 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="bg-violet-600 p-2 rounded-xl text-white shadow-lg shadow-violet-500/30">
-                    <i data-lucide="sparkles" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold bg-gradient-to-r from-violet-400 via-purple-300 to-indigo-400 bg-clip-text text-transparent">
-                        FLUX CLIPS AI
-                    </h1>
-                    <p class="text-[10px] text-gray-400 font-medium">AI Auto-Crop & Multi-Clip Generator</p>
-                </div>
-            </div>
-
-            <div class="flex items-center space-x-3">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span> Engine Ready
-                </span>
-            </div>
-        </div>
-    </header>
-
-    <!-- React Root Container -->
+  </head>
+  <body class="bg-[#080c14] text-white">
+    <!-- React Root Mount Point -->
     <div id="root"></div>
 
-    <!-- Footer -->
-    <footer class="border-t border-gray-800/80 bg-slate-950 py-4 text-center text-xs text-gray-500 mt-auto">
-        <p>© 2026 FLUX CLIPS AI Studio. Smart Video Trimming & Auto-Crop Engine.</p>
-    </footer>
-
-    <script>
-        lucide.createIcons();
-    </script>
-</body>
+    <!-- Vite & React Main Entry Point Bridge (यह लाइन सबसे जरूरी है) -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
