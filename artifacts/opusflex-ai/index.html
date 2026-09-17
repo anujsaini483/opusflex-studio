@@ -51,22 +51,40 @@
     <!-- Main Studio Dashboard -->
     <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-6 space-y-6">
 
-        <!-- STEP 1: Upload Video Box -->
-        <div class="glass-panel p-5 rounded-2xl space-y-3">
+        <!-- STEP 1: Upload Source Video -->
+        <div class="glass-panel p-5 rounded-2xl space-y-4">
             <div class="flex items-center justify-between">
                 <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-violet-600/20 text-violet-300 border border-violet-500/30">STEP 1</span>
                 <h2 class="text-sm font-semibold text-gray-200">Upload Source Video</h2>
             </div>
             
-            <div class="flex flex-col sm:flex-row gap-3">
-                <label class="flex-1 border-2 border-dashed border-gray-700 hover:border-violet-500 rounded-xl p-4 text-center cursor-pointer transition bg-slate-950/40 flex items-center justify-center gap-2">
-                    <i data-lucide="upload-cloud" class="w-5 h-5 text-violet-400"></i>
-                    <span id="uploadText" class="text-xs text-gray-300 font-medium">Choose video file (MP4, MOV)</span>
+            <div class="space-y-3">
+                <!-- URL Input Field -->
+                <div>
+                    <input type="text" id="videoUrlInput" placeholder="https://example.com/video.mp4" class="w-full bg-slate-950 border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-violet-500 font-mono">
+                </div>
+
+                <!-- Upload URL Button -->
+                <button id="uploadUrlBtn" type="button" class="w-full bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:opacity-90 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-violet-600/20 text-xs flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="upload" class="w-4 h-4"></i> Upload URL
+                </button>
+
+                <!-- OR UPLOAD FILE Divider -->
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-gray-800"></div>
+                    <span class="flex-shrink mx-4 text-[10px] text-gray-500 font-semibold uppercase tracking-wider">OR UPLOAD FILE</span>
+                    <div class="flex-grow border-t border-gray-800"></div>
+                </div>
+
+                <!-- Drag & Drop / Click to Upload Box -->
+                <label class="border-2 border-dashed border-gray-700/80 hover:border-violet-500 rounded-xl p-5 text-center cursor-pointer transition bg-slate-950/40 flex flex-col items-center justify-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-violet-600/10 flex items-center justify-center text-violet-400">
+                        <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                    </div>
+                    <span id="uploadText" class="text-xs text-gray-200 font-medium">Click or Drag & Drop local video here</span>
+                    <span class="text-[10px] text-gray-500">Maximum file size: Up to 500MB</span>
                     <input type="file" id="videoInput" accept="video/*" class="hidden">
                 </label>
-                <button id="demoBtn" type="button" class="bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/40 px-4 py-3 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2">
-                    <i data-lucide="play-circle" class="w-4 h-4"></i> Use Demo Video
-                </button>
             </div>
         </div>
 
@@ -90,7 +108,7 @@
                 <canvas id="previewCanvas" class="w-full h-full object-contain"></canvas>
                 
                 <!-- Play/Pause Overlay Button -->
-                <button id="playPauseOverlay" class="absolute bg-violet-600/80 hover:bg-violet-600 text-white p-4 rounded-full shadow-lg backdrop-blur transition transform hover:scale-110">
+                <button id="playPauseOverlay" class="absolute bg-violet-600/80 hover:bg-violet-600 text-white p-4 rounded-full shadow-lg backdrop-blur transition transform hover:scale-110 cursor-pointer">
                     <i data-lucide="play" class="w-6 h-6 fill-current"></i>
                 </button>
             </div>
@@ -216,17 +234,24 @@
             return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
 
-        // Load Demo Video by default so things work instantly
-        function loadDemoVideo() {
+        // Load Default Sample Video on startup
+        function loadDefaultVideo() {
             videoElem.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
             videoElem.load();
-            document.getElementById('uploadText').textContent = "Demo Video Loaded (ForBiggerBlazes.mp4)";
+            document.getElementById('videoUrlInput').value = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
         }
-        loadDemoVideo();
+        loadDefaultVideo();
 
-        document.getElementById('demoBtn').addEventListener('click', () => {
-            loadDemoVideo();
-            videoElem.play();
+        // Upload URL Button Action
+        document.getElementById('uploadUrlBtn').addEventListener('click', () => {
+            const url = document.getElementById('videoUrlInput').value.trim();
+            if (url) {
+                videoElem.src = url;
+                videoElem.load();
+                videoElem.play().catch(() => {});
+            } else {
+                alert('Please enter a valid video URL.');
+            }
         });
 
         // Handle File Upload
@@ -236,7 +261,7 @@
                 const blobURL = URL.createObjectURL(file);
                 videoElem.src = blobURL;
                 videoElem.load();
-                document.getElementById('uploadText').textContent = file.name;
+                document.getElementById('videoUrlInput').value = file.name;
             }
         });
 
