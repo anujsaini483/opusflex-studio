@@ -325,7 +325,7 @@ export default function App() {
           {/* Left Column */}
           <div className="space-y-5">
             
-            {/* RATIO BOX WITH PROPER SHAPED BOXES (9:16 vertical, 16:9 landscape, 1:1 square) */}
+            {/* RATIO BOX */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Ratio</h2>
               <div className="grid grid-cols-6 gap-2">
@@ -354,7 +354,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* CAPTIONS & SUBTITLES BOX (Strict Overflow Hidden for Toggle Dots) */}
+            {/* CAPTIONS & SUBTITLES BOX (Bulletproof Flex Switch) */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Captions & Subtitles</h2>
               
@@ -363,9 +363,9 @@ export default function App() {
                   <span className="text-gray-300">Auto Captions</span>
                   <div 
                     onClick={() => setAutoCaptions(!autoCaptions)}
-                    className={`relative w-11 h-6 flex items-center rounded-full p-0.5 cursor-pointer transition-colors overflow-hidden ${autoCaptions ? 'bg-purple-600' : 'bg-gray-800'}`}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${autoCaptions ? 'bg-purple-600 justify-end' : 'bg-gray-800 justify-start'}`}
                   >
-                    <div className={`absolute w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-200 ${autoCaptions ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    <div className="w-4 h-4 rounded-full bg-white shadow-md transition-all" />
                   </div>
                 </div>
 
@@ -383,9 +383,9 @@ export default function App() {
                   <span className="text-gray-300">Subtitles</span>
                   <div 
                     onClick={() => setSubtitlesEnabled(!subtitlesEnabled)}
-                    className={`relative w-11 h-6 flex items-center rounded-full p-0.5 cursor-pointer transition-colors overflow-hidden ${subtitlesEnabled ? 'bg-purple-600' : 'bg-gray-800'}`}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${subtitlesEnabled ? 'bg-purple-600 justify-end' : 'bg-gray-800 justify-start'}`}
                   >
-                    <div className={`absolute w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-200 ${subtitlesEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    <div className="w-4 h-4 rounded-full bg-white shadow-md transition-all" />
                   </div>
                 </div>
 
@@ -615,7 +615,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 3: CUSTOMIZE LENGTH MODAL (1s to 120s) */}
+      {/* MODAL 3: CUSTOMIZE LENGTH MODAL */}
       {showLengthModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
@@ -649,7 +649,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 4: CUSTOMIZE NUMBER OF CLIPS MODAL (Max 15) */}
+      {/* MODAL 4: CUSTOMIZE NUMBER OF CLIPS MODAL */}
       {showClipCountModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
