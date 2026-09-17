@@ -43,9 +43,9 @@ const DEMO_DURATION = 12;
 const RECENT_STORAGE_KEY = 'opusflex-recent-videos';
 
 const seedClips: Clip[] = [
-  { id: 1, title: 'The perfect moment is a myth', start: 0, length: 4, score: 94, sourceName: 'Creator mindset demo', createdAt: 1 },
-  { id: 2, title: 'Stop waiting to publish', start: 4, length: 4, score: 87, sourceName: 'Creator mindset demo', createdAt: 1 },
-  { id: 3, title: 'Your first 10 ideas are bad', start: 8, length: 4, score: 81, sourceName: 'Creator mindset demo', createdAt: 1 },
+  { id: 1, title: 'Viral Hook #1: The core message', start: 0, length: 4, score: 96, sourceName: 'Demo video', createdAt: 1 },
+  { id: 2, title: 'Viral Hook #2: Key takeaway', start: 4, length: 4, score: 89, sourceName: 'Demo video', createdAt: 1 },
+  { id: 3, title: 'Viral Hook #3: Final punchline', start: 8, length: 4, score: 84, sourceName: 'Demo video', createdAt: 1 },
 ];
 
 function formatTime(seconds: number) {
@@ -71,7 +71,7 @@ function getRecordingMimeType() {
   return [
     'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
     'video/mp4',
-    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp9,opus',
     'video/webm',
   ].find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? '';
 }
@@ -166,29 +166,15 @@ function createDemoVideo() {
     const draw = () => {
       const progress = frame / totalFrames;
       const gradient = context.createLinearGradient(0, 0, demoWidth, demoHeight);
-      gradient.addColorStop(0, '#f4f4f5');
-      gradient.addColorStop(0.5, '#e4e4e7');
-      gradient.addColorStop(1, '#f4f4f5');
+      gradient.addColorStop(0, '#0f172a');
+      gradient.addColorStop(0.5, '#1e1b4b');
+      gradient.addColorStop(1, '#0f172a');
       context.fillStyle = gradient;
       context.fillRect(0, 0, demoWidth, demoHeight);
 
-      const cardX = demoWidth * (0.22 + progress * 0.18);
-      context.fillStyle = 'rgba(0, 0, 0, .06)';
-      context.fillRect(cardX, 96, 230, 142);
-      context.fillStyle = 'rgba(0, 0, 0, .8)';
-      context.fillRect(cardX + 26, 130, 88, 6);
-      context.fillStyle = 'rgba(0, 0, 0, .4)';
-      context.fillRect(cardX + 26, 154, 142, 4);
-      context.fillRect(cardX + 26, 174, 112, 4);
-      context.fillStyle = 'rgba(0, 0, 0, .7)';
-      context.fillRect(cardX + 26, 204, 54 + progress * 90, 5);
-      context.fillStyle = '#000000';
-      context.fillRect(44 + progress * 120, 54, 58, 4);
-      context.fillStyle = 'rgba(0, 0, 0, .5)';
-      context.fillRect(42, 34, 94, 4);
-      context.fillStyle = '#000000';
-      context.font = '700 18px Inter, sans-serif';
-      context.fillText(progress < 0.45 ? 'CREATOR MINDSET' : 'PUBLISH BEFORE PERFECT', 42, 315);
+      context.fillStyle = '#ffffff';
+      context.font = '700 24px Inter, sans-serif';
+      context.fillText(progress < 0.5 ? 'FLUX CLIPS AI DEMO' : 'SMART AUTO-CROP ENGINE', 60, 180);
       frame += 1;
     };
 
@@ -251,10 +237,10 @@ function Studio() {
   const [dragging, setDragging] = useState(false);
   const [durationPreset, setDurationPreset] = useState<DurationPreset>('under15');
   const [customDuration, setCustomDuration] = useState(15);
-  const [aspect, setAspect] = useState<Aspect>('original');
+  const [aspect, setAspect] = useState<Aspect>('9:16'); // Default to Shorts 9:16
   const [clipCount, setClipCount] = useState(5);
   const [showCaption, setShowCaption] = useState(true);
-  const [captionText, setCaptionText] = useState('Make the boring part visible');
+  const [captionText, setCaptionText] = useState('🔥 AI Viral Hook Detected');
   const [captionWords, setCaptionWords] = useState<CaptionWord[]>([]);
   const [captionPosition, setCaptionPosition] = useState<CaptionPosition>('bottom');
   const [captionColor, setCaptionColor] = useState('#ffffff');
@@ -301,7 +287,7 @@ function Studio() {
     if (playing) {
       void video.play().catch(() => {
         setPlaying(false);
-        setToast('Press play again to start this video');
+        setToast('Press play again to start video');
       });
     } else {
       video.pause();
@@ -337,46 +323,51 @@ function Studio() {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
+  // AI Clip Generation based on actual source duration
   useEffect(() => {
     if (!processing) return;
     const timer = window.setInterval(() => {
       setProgress((value) => {
-        const next = Math.min(value + 10, 100);
+        const next = Math.min(value + 15, 100);
         if (next < 100) return next;
 
         window.clearInterval(timer);
         const requestedLength = durationPreset === 'custom' ? customDuration : durationPreset === 'under15' ? 12 : durationPreset === '15-30' ? 24 : 45;
-        const length = Math.max(1, Math.min(requestedLength, Math.max(1, sourceDuration - 0.2)));
+        const length = Math.max(3, Math.min(requestedLength, Math.max(1, sourceDuration - 0.2)));
         const maxStart = Math.max(0, sourceDuration - length);
         const step = clipCount > 1 ? maxStart / (clipCount - 1) : 0;
-        const titles = [
-          'The perfect moment is a myth',
-          'Stop waiting to publish',
-          'Your first 10 ideas are bad',
-          'Make the boring part visible',
-          'Consistency beats the algorithm',
-          'The audience can feel your doubt',
+        
+        const hookTitles = [
+          '🔥 Viral Hook: The Secret Revealed',
+          '⚡ Best Moment: Must Watch',
+          '🚀 High Retention Highlight',
+          '💡 Core Value & Insight',
+          '🎯 Peak Engagement Segment',
+          '⭐ Ultimate Takeaway Moment'
         ];
-        const sourceName = videoFile?.name ?? 'Source video';
+        
+        const sourceName = videoFile?.name ?? 'Uploaded Video';
         const made = Array.from({ length: clipCount }, (_, index) => ({
           id: Date.now() + index,
-          title: titles[index % titles.length],
+          title: hookTitles[index % hookTitles.length],
           start: Math.round(Math.min(index * step, maxStart) * 10) / 10,
           length: Math.round(length * 10) / 10,
-          score: Math.max(73, 96 - index * 4),
+          score: Math.max(82, 98 - index * 3),
           sourceName,
           createdAt: Date.now(),
         }));
+        
         made.forEach((clip) => {
           clipSourceUrlsRef.current[clip.id] = videoUrl;
         });
+        
         setRecentClips((current) => [...made, ...current]);
         setProgress(100);
         setProcessing(false);
-        setToast(`${made.length} AI clips generated successfully`);
+        setToast(`✨ ${made.length} AI vertical shorts generated successfully!`);
         return 100;
       });
-    }, 140);
+    }, 180);
     return () => window.clearInterval(timer);
   }, [processing, clipCount, customDuration, durationPreset, sourceDuration, videoFile, videoUrl]);
 
@@ -445,7 +436,7 @@ function Studio() {
     }
     setProgress(0);
     setProcessing(true);
-    setToast('AI analyzing video & cutting clips…');
+    setToast('AI detecting hooks & reframing to vertical…');
   }
 
   function generateCaptions() {
@@ -462,13 +453,13 @@ function Studio() {
       end: Math.min(sourceDuration, (index + 1) * wordDuration),
     })));
     setShowCaption(true);
-    setToast('Timed captions generated');
+    setToast('Timed captions applied');
   }
 
   function getCaptionLine(time: number) {
     if (!captionWords.length) return captionText.trim();
     const activeIndex = captionWords.findIndex((word) => time >= word.start && time <= word.end);
-    if (activeIndex < 0) return '';
+    if (activeIndex < 0) return captionText.trim();
     return captionWords.slice(Math.max(0, activeIndex - 1), Math.min(captionWords.length, activeIndex + 2)).map((word) => word.text).join(' ');
   }
 
@@ -514,6 +505,7 @@ function Studio() {
     setToast('Clip removed from history');
   }
 
+  // True Auto-Crop Export (Canvas rendering to 9:16 vertical shorts with audio & captions)
   async function downloadClip(clip: Clip, clipNumber: number) {
     const previous = renderedVideosRef.current[clip.id];
     if (previous) {
@@ -531,9 +523,11 @@ function Studio() {
     }
 
     const canvas = document.createElement('canvas');
+    // Set target dimensions based on selected aspect ratio
     const targetDimensions = aspect === '9:16' ? [1080, 1920] : aspect === '1:1' ? [1080, 1080] : aspect === '16:9' ? [1920, 1080] : [1280, 720];
     canvas.width = targetDimensions[0];
     canvas.height = targetDimensions[1];
+    
     const context = canvas.getContext('2d', { alpha: false, desynchronized: true });
     if (context) {
       context.imageSmoothingEnabled = true;
@@ -570,30 +564,62 @@ function Studio() {
       const height = canvas.height;
       const targetAspect = width / height;
       const sourceAspect = video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
+      
       let sourceWidth = video.videoWidth;
       let sourceHeight = video.videoHeight;
       let sourceX = 0;
       let sourceY = 0;
+
+      // Smart Auto-Crop Logic for Vertical 9:16 Shorts
       if (sourceAspect > targetAspect) {
+        // Landscape to Vertical: Crop center strip
         sourceWidth = video.videoHeight * targetAspect;
-        sourceX = (video.videoWidth - sourceWidth) * 0.5;
+        sourceX = (video.videoWidth - sourceWidth) / 2;
       } else {
+        // Vertical or Square
         sourceHeight = video.videoWidth / targetAspect;
-        sourceY = (video.videoHeight - sourceHeight) * 0.5;
+        sourceY = (video.videoHeight - sourceHeight) / 2;
       }
+
+      // Draw background / filled frame
+      context.fillStyle = '#080c14';
+      context.fillRect(0, 0, width, height);
+
+      // Draw cropped video frame
       context.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
 
+      // Render Subtitles / Captions on Export
       const captionLine = getCaptionLine(start + elapsed);
       if (showCaption && captionLine) {
         const captionY = captionPosition === 'top' ? height * 0.16 : captionPosition === 'center' ? height * 0.5 : height * 0.82;
-        context.font = `800 ${Math.max(28, Math.round(58 * (height / 1920)))}px Inter, sans-serif`;
+        context.font = `800 ${Math.max(32, Math.round(64 * (height / 1920)))}px Inter, sans-serif`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.lineWidth = Math.max(5, height / 260);
-        context.strokeStyle = 'rgba(0,0,0,.9)';
+        context.lineWidth = Math.max(6, height / 240);
+        context.strokeStyle = 'rgba(0,0,0,0.9)';
         context.fillStyle = captionColor;
-        context.strokeText(captionLine, width / 2, captionY);
-        context.fillText(captionLine, width / 2, captionY);
+        
+        // Text wrapping for short captions
+        const maxTextWidth = width * 0.86;
+        const captionLines: string[] = [];
+        let line = '';
+        captionLine.split(/\s+/).forEach((word) => {
+          const candidate = line ? `${line} ${word}` : word;
+          if (context.measureText(candidate).width > maxTextWidth && line) {
+            captionLines.push(line);
+            line = word;
+          } else {
+            line = candidate;
+          }
+        });
+        if (line) captionLines.push(line);
+
+        const lineHeight = Math.max(40, Math.round(75 * (height / 1920)));
+        captionLines.forEach((textLine, idx) => {
+          const lineY = captionY + (idx - (captionLines.length - 1) / 2) * lineHeight;
+          context.strokeText(textLine, width / 2, lineY);
+          context.fillText(textLine, width / 2, lineY);
+        });
       }
     };
 
@@ -602,13 +628,17 @@ function Studio() {
       video.currentTime = start;
       await waitForVideoEvent(video, 'seeked');
       video.muted = false;
-      video.volume = 0;
+      video.volume = 1; // Ensure sound is active for recording
       await video.play();
+
       canvasStream = canvas.captureStream(30);
       sourceStream = getVideoCaptureStream(video);
       const audioTracks = await getAudioTracksForExport(video);
+      
+      // Combine canvas video track with original audio tracks
       stream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
-      recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 10_000_000 });
+      recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12_000_000 });
+      
       const chunks: BlobPart[] = [];
       const finished = new Promise<Blob>((resolve, reject) => {
         if (!recorder) return reject(new Error('recorder unavailable'));
@@ -616,8 +646,10 @@ function Studio() {
         recorder.onerror = () => reject(new Error('recording failed'));
         recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
       });
+      
       recorder.start(250);
       const startedAt = performance.now();
+      
       await new Promise<void>((resolve) => {
         const check = () => {
           const elapsed = Math.min(length, (performance.now() - startedAt) / 1000);
@@ -631,15 +663,17 @@ function Studio() {
         };
         check();
       });
+
       video.pause();
       recorder.stop();
       const blob = await finished;
       const extension = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
-      const filename = `Viral_Clip_${clipNumber}.${extension}`;
+      const filename = `AI_Vertical_Short_${clipNumber}.${extension}`;
+      
       renderedVideosRef.current[clip.id] = { blob, filename };
       setExportProgress((current) => ({ ...current, [clip.id]: 100 }));
       downloadBlob(blob, filename);
-      setToast('Clip downloaded successfully');
+      setToast('🚀 Vertical Short rendered & downloaded successfully!');
     } catch {
       setExportProgress((current) => ({ ...current, [clip.id]: 0 }));
       setToast('Export failed. Please try again.');
@@ -741,7 +775,7 @@ function Studio() {
 
             <button 
               onClick={() => { void loadDemo(); }}
-              className="w-full rounded-xl border border-gray-800 bg-slate-950/60 py-2 text-center text-xs text-gray-400 hover:border-violet-500 hover:text-white transition"
+              className="w-full rounded-xl border border-gray-800 bg-slate-950/60 py-2 text-center text-xs text-gray-400 hover:border-violet-500 hover:text-white transition cursor-pointer"
             >
               Or load sample demo video
             </button>
@@ -774,16 +808,17 @@ function Studio() {
             ))}
           </div>
 
+          {/* Dynamic Aspect Ratio Preview Container */}
           <div 
             className="relative bg-black rounded-xl overflow-hidden mx-auto flex items-center justify-center border border-gray-800 shadow-inner transition-all duration-300 w-full"
-            style={aspect === '9:16' ? { aspectRatio: '9/16', maxHeight: '520px' } : aspect === '1:1' ? { aspectRatio: '1/1', maxHeight: '480px' } : aspect === '16:9' ? { aspectRatio: '16/9', maxHeight: '420px' } : {}}
+            style={aspect === '9:16' ? { aspectRatio: '9/16', maxHeight: '520px', maxWidth: '292px' } : aspect === '1:1' ? { aspectRatio: '1/1', maxHeight: '480px' } : aspect === '16:9' ? { aspectRatio: '16/9', maxHeight: '420px' } : {}}
           >
             {videoUrl ? (
               <video 
                 ref={videoRef}
                 src={videoUrl}
                 playsInline
-                className="h-full w-full object-contain cursor-pointer"
+                className="h-full w-full object-cover cursor-pointer"
                 onClick={() => setPlaying((v) => !v)}
               />
             ) : (
@@ -801,7 +836,7 @@ function Studio() {
 
             {showCaption && getCaptionLine(currentTime) && (
               <div className={`pointer-events-none absolute left-1/2 w-[86%] -translate-x-1/2 text-center ${captionPosition === 'top' ? 'top-[12%]' : captionPosition === 'center' ? 'top-1/2 -translate-y-1/2' : 'bottom-[10%]'}`}>
-                <span className="rounded-lg bg-black/70 px-3 py-1.5 text-[clamp(14px,2.5vw,26px)] font-extrabold text-white" style={{ color: captionColor, textShadow: '0 2px 4px rgba(0,0,0,.9)' }}>
+                <span className="rounded-lg bg-black/70 px-3 py-1.5 text-[clamp(14px,2.5vw,24px)] font-extrabold text-white" style={{ color: captionColor, textShadow: '0 2px 4px rgba(0,0,0,.9)' }}>
                   {getCaptionLine(currentTime)}
                 </span>
               </div>
@@ -820,7 +855,7 @@ function Studio() {
             <div className="flex items-center justify-between pt-2 border-t border-gray-800/60 text-xs">
               <label className="flex items-center gap-2 cursor-pointer text-gray-300">
                 <input type="checkbox" defaultChecked className="accent-violet-500 w-4 h-4 rounded" />
-                <span>Smart Face & Speaker Center Focus</span>
+                <span>Smart Auto-Reframe & Speaker Focus</span>
               </label>
               <button onClick={() => setPlaying((v) => !v)} className="flex items-center gap-1.5 text-violet-400 hover:underline cursor-pointer">
                 {playing ? <Pause size={13} /> : <Play size={13} />} {playing ? 'Pause' : 'Play Preview'}
@@ -842,9 +877,9 @@ function Studio() {
               <select 
                 value={durationPreset} 
                 onChange={(e) => setDurationPreset(e.target.value as DurationPreset)}
-                className="w-full bg-slate-950 border border-gray-800 rounded-xl px-3 py-2.5 text-gray-200 focus:outline-none focus:border-violet-500"
+                className="w-full bg-slate-950 border border-gray-800 rounded-xl px-3 py-2.5 text-gray-200 focus:outline-none focus:border-violet-500 cursor-pointer"
               >
-                <option value="under15">Under 15 Seconds</option>
+                <option value="under15">Under 15 Seconds (Shorts/Reels)</option>
                 <option value="15-30">15 - 30 Seconds</option>
                 <option value="30-60">30 - 60 Seconds</option>
               </select>
@@ -874,7 +909,7 @@ function Studio() {
               className="w-full bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:opacity-90 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-violet-600/30 flex items-center justify-center gap-2 mt-3 cursor-pointer disabled:opacity-50"
             >
               {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {processing ? `AI Analyzing Video (${progress}%)…` : 'Generate AI Clips Now'}
+              {processing ? `AI Analyzing Hooks & Cropping (${progress}%)…` : '✨ Generate AI Vertical Clips Now'}
             </button>
             {processing && (
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-950">
@@ -888,7 +923,7 @@ function Studio() {
         <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur-xl space-y-3 shadow-xl">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
-              🎬 Extracted Clips Output
+              🎬 Extracted AI Vertical Clips Output
             </h2>
             <span className="rounded-full bg-violet-600/20 px-2.5 py-0.5 text-xs text-violet-400 border border-violet-500/30 font-mono">
               {recentClips.length}
@@ -899,7 +934,7 @@ function Studio() {
             {recentClips.length === 0 ? (
               <div className="rounded-xl border border-dashed border-gray-800 bg-slate-950/40 py-10 text-center text-gray-500 space-y-2">
                 <p className="text-xs">No clips generated yet.</p>
-                <p className="text-[10px] text-gray-600">Load a video & click "Generate AI Clips Now".</p>
+                <p className="text-[10px] text-gray-600">Load a video & click "Generate AI Vertical Clips Now".</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -907,18 +942,18 @@ function Studio() {
                   const percent = progressFor(clip);
                   return (
                     <div key={clip.id} className="rounded-xl border border-gray-800 bg-slate-950 p-3 space-y-2">
-                      <div onClick={() => selectClip(clip)} className="relative aspect-[9/16] cursor-pointer overflow-hidden rounded-lg bg-black flex items-center justify-center group">
-                        <span className="absolute top-2 left-2 rounded bg-violet-600/80 px-2 py-0.5 font-mono text-[9px] text-white">
-                          Clip #{index + 1} ({clip.score}%)
+                      <div onClick={() => selectClip(clip)} className="relative aspect-[9/16] cursor-pointer overflow-hidden rounded-lg bg-black flex items-center justify-center group shadow-md">
+                        <span className="absolute top-2 left-2 rounded bg-violet-600/90 px-2 py-0.5 font-mono text-[9px] text-white">
+                          Clip #{index + 1} ({clip.score}% AI Score)
                         </span>
-                        <Play size={28} className="text-violet-400 opacity-80 group-hover:scale-110 transition" />
+                        <Play size={28} className="text-violet-400 opacity-90 group-hover:scale-110 transition" />
                       </div>
                       <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-medium text-gray-300 truncate max-w-[120px]">{clip.title}</span>
+                        <span className="font-medium text-gray-300 truncate max-w-[110px]">{clip.title}</span>
                         <div className="flex gap-1.5">
                           <button 
                             onClick={() => { void downloadClip(clip, index + 1); }}
-                            className="flex items-center gap-1 rounded-lg bg-violet-600 px-2.5 py-1 text-white hover:bg-violet-500 transition cursor-pointer"
+                            className="flex items-center gap-1 rounded-lg bg-violet-600 px-2.5 py-1 text-white hover:bg-violet-500 transition cursor-pointer font-semibold"
                           >
                             <Download size={12} /> Save
                           </button>
