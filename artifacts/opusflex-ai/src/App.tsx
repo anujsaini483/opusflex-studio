@@ -47,6 +47,7 @@ const initialClips: GeneratedClip[] = [
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [videoUrl, setVideoUrl] = useState(DEMO_VIDEO_URL);
@@ -136,7 +137,7 @@ export default function App() {
     return `${m}:${s}`;
   };
 
-  // Dynamic Ratio CSS Mapper for correct framing & focus
+  // Ratio CSS Mapper for generated short clips preview modal
   const getRatioContainerClass = (r: RatioType) => {
     switch (r) {
       case '9:16': return 'aspect-[9/16] max-h-[480px]';
@@ -231,11 +232,6 @@ export default function App() {
 
   const handlePreviewClip = (clip: GeneratedClip) => {
     setPreviewClip(clip);
-    if (videoRef.current && clip.startTime !== undefined) {
-      videoRef.current.currentTime = clip.startTime;
-      videoRef.current.play();
-      setPlaying(true);
-    }
   };
 
   return (
@@ -268,14 +264,14 @@ export default function App() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
 
-        {/* 1. TOP VIDEO PLAYER CARD */}
+        {/* 1. TOP VIDEO PLAYER CARD (Preserves Original Video Ratio) */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] overflow-hidden shadow-2xl">
-          <div className={`relative bg-black w-full flex items-center justify-center overflow-hidden transition-all ${getRatioContainerClass(ratio)}`}>
+          <div className="relative bg-black w-full flex items-center justify-center overflow-hidden max-h-[440px]">
             <video 
               ref={videoRef}
               src={videoUrl}
               playsInline
-              className="w-full h-full object-cover cursor-pointer"
+              className="w-full max-h-[440px] object-contain cursor-pointer"
               onClick={() => {
                 if (playing) { videoRef.current?.pause(); setPlaying(false); }
                 else { videoRef.current?.play(); setPlaying(true); }
@@ -290,7 +286,7 @@ export default function App() {
               </button>
             )}
             <div className="absolute top-3 right-3 bg-black/70 backdrop-blur border border-gray-700 px-3 py-1 rounded-full text-[10px] uppercase font-mono tracking-wider text-purple-300">
-              Ratio: {ratio} • Smart Focus
+              Original Ratio View
             </div>
           </div>
 
@@ -379,9 +375,9 @@ export default function App() {
           {/* Left Column */}
           <div className="space-y-5">
             
-            {/* RATIO BOX */}
+            {/* RATIO BOX (Target Ratio for Generated Shorts) */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
-              <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Ratio</h2>
+              <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Target Ratio (For Shorts)</h2>
               <div className="grid grid-cols-6 gap-2">
                 {[
                   { id: '9:16', label: 'Vertical', shapeClass: 'w-3.5 h-6' },
@@ -619,18 +615,23 @@ export default function App() {
 
       </main>
 
-      {/* MODAL 1: PREVIEW CLIP MODAL */}
+      {/* MODAL 1: PREVIEW CLIP MODAL (Enforces exact start/end time slice & target ratio) */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl space-y-4 p-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white truncate">{previewClip.title}</h3>
+              <div>
+                <h3 className="text-sm font-bold text-white truncate">{previewClip.title}</h3>
+                <p className="text-[11px] text-purple-400 font-mono">Segment: {previewClip.timeRange} ({previewClip.duration})</p>
+              </div>
               <button onClick={() => setPreviewClip(null)} className="text-gray-400 hover:text-white p-1 rounded-lg">
                 <X size={18} />
               </button>
             </div>
+            
             <div className={`relative bg-black rounded-xl overflow-hidden flex items-center justify-center mx-auto w-full ${getRatioContainerClass(ratio)}`}>
               <video 
+                ref={previewVideoRef}
                 src={videoUrl} 
                 controls 
                 autoPlay 
@@ -639,10 +640,18 @@ export default function App() {
                     e.currentTarget.currentTime = previewClip.startTime;
                   }
                 }}
+                onTimeUpdate={(e) => {
+                  if (previewClip.endTime !== undefined && e.currentTarget.currentTime >= previewClip.endTime) {
+                    e.currentTarget.pause();
+                    e.currentTarget.currentTime = previewClip.startTime || 0;
+                  }
+                }}
                 className="w-full h-full object-cover" 
               />
             </div>
-            <div className="flex justify-end gap-2 pt-2">
+
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-[10px] text-gray-400">Target Ratio: {ratio}</span>
               <button 
                 onClick={() => handleDownloadClip(previewClip)}
                 className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer"
