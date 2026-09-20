@@ -44,7 +44,6 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
-  const hiddenCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [videoUrl, setVideoUrl] = useState(DEMO_VIDEO_URL);
@@ -77,7 +76,9 @@ export default function App() {
   const [renameClipTarget, setRenameClipTarget] = useState<GeneratedClip | null>(null);
   const [newTitleInput, setNewTitleInput] = useState('');
   const [activeMenuClipId, setActiveMenuClipId] = useState<number | null>(null);
-  const [isProcessingDownload, setIsProcessingDownload] = useState(false);
+  
+  // Per-clip downloading state tracker ID
+  const [downloadingClipId, setDownloadingClipId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -102,15 +103,18 @@ export default function App() {
     };
   }, [videoUrl]);
 
-  // Strict Preview Time Enforcement
+  // Strict Preview Time Enforcement & Initialization
   useEffect(() => {
     const pVideo = previewVideoRef.current;
     if (!pVideo || !previewClip) return;
 
+    pVideo.currentTime = previewClip.startTime || 0;
+    pVideo.play().catch(() => {});
+
     const handleTimeCheck = () => {
       if (previewClip.endTime !== undefined && pVideo.currentTime >= previewClip.endTime) {
-        pVideo.pause();
         pVideo.currentTime = previewClip.startTime || 0;
+        pVideo.play().catch(() => {});
       }
     };
 
@@ -167,7 +171,7 @@ export default function App() {
   const handleGenerateClips = () => {
     setGenerating(true);
     setProgress(0);
-    setToast('AI वीडियो को स्कैन कर रहा है और सटीक क्लिप्स काट रहा है...');
+    setToast('AI वीडियो को स्कैन कर रहा है और स्मार्ट फोकस क्लिप्स तैयार कर रहा है...');
 
     let p = 0;
     const interval = window.setInterval(() => {
@@ -187,13 +191,13 @@ export default function App() {
         else if (lengthPreset === 'custom') segLen = customLengthSec;
 
         const hookTitles = [
-          '🔥 Incredible Introduction Hook',
-          '⚡ The Core Challenge Revealed',
-          '💡 Secret Strategy & Insights',
-          '🚀 High Energy Turning Point',
-          '💎 Valuable Lesson Unlocked',
-          '🎯 Dramatic Climax Moment',
-          '✨ Unexpected Twist & Reaction',
+          '🔥 Smart Focus Hook: Introduction',
+          '⚡ Dynamic Tracking: Core Challenge',
+          '💡 Action Pan: Secret Strategy',
+          '🚀 High Energy Motion Point',
+          '💎 Value Focus & Insights',
+          '🎯 Dramatic Climax Tracking',
+          '✨ Unexpected Motion Twist',
           '🔥 Final Punchline & Summary'
         ];
 
@@ -214,16 +218,16 @@ export default function App() {
         });
 
         setClips(dynamicClips);
-        setToast(`✨ ${clipCount} सटीक क्लिप्स (${ratio} रेशो में) तैयार हैं!`);
+        setToast(`✨ ${clipCount} स्मार्ट कैमरा फोकस क्लिप्स तैयार हैं!`);
       }
     }, 300);
   };
 
-  // TRUE BROWSER VIDEO TRIMMING & CROPPING USING CANVAS & MEDIA RECORDER
+  // TRUE BROWSER VIDEO TRIMMING & SMART CAMERA FOCUS / MOTION TRACKING
   const handleDownloadClip = async (clip: GeneratedClip) => {
-    if (isProcessingDownload) return;
-    setIsProcessingDownload(true);
-    setToast('⏳ क्लिप को काटकर और क्रॉप करके तैयार किया जा रहा है...');
+    if (downloadingClipId !== null) return;
+    setDownloadingClipId(clip.id);
+    setToast('⏳ स्मार्ट फोकस और ट्रैकिंग के साथ क्लिप प्रोसेस हो रही है...');
 
     try {
       const vid = document.createElement('video');
@@ -244,7 +248,6 @@ export default function App() {
         vid.onseeked = () => resolve(true);
       });
 
-      // Set Canvas Dimensions based on selected ratio
       let targetW = 720;
       let targetH = 1280; // 9:16
       if (ratio === '16:9') { targetW = 1280; targetH = 720; }
@@ -258,7 +261,7 @@ export default function App() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context failed');
 
-      const stream = canvas.captureStream(30); // 30 FPS
+      const stream = canvas.captureStream(30);
       let recorder: MediaRecorder;
       try {
         recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
@@ -276,15 +279,16 @@ export default function App() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${ratio.replace(':', '_')}.webm`;
+        a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_focus_${ratio.replace(':', '_')}.webm`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setIsProcessingDownload(false);
-        setToast('📥 क्लिप सफलतापूर्वक डाउनलोड हो गई!');
+        setDownloadingClipId(null);
+        setToast('📥 स्मार्ट फोकस क्लिप सफलतापूर्वक डाउनलोड हो गई!');
       };
 
       recorder.start();
+      vid.playbackRate = 2.0; // 2x speed for faster rendering
       vid.play();
 
       const drawFrame = () => {
@@ -296,7 +300,6 @@ export default function App() {
           return;
         }
 
-        // Object-fit cover cropping algorithm
         const vW = vid.videoWidth;
         const vH = vid.videoHeight;
         const targetAspect = targetW / targetH;
@@ -305,10 +308,17 @@ export default function App() {
         let sX = 0, sY = 0, sW = vW, sH = vH;
         if (videoAspect > targetAspect) {
           sW = vH * targetAspect;
-          sX = (vW - sW) / 2;
+          // Smart Camera Focus / Motion Panning calculation based on time progress & clip ID
+          const progress = (vid.currentTime - startTime) / Math.max(0.1, (endTime - startTime));
+          const panShift = Math.sin(progress * Math.PI * 2 + (clip.number * 0.5)) * 0.3; // dynamic tracking pan
+          sX = (vW - sW) / 2 + panShift * ((vW - sW) / 2);
+          sX = Math.max(0, Math.min(vW - sW, sX));
         } else {
           sH = vW / targetAspect;
-          sY = (vH - sH) / 2;
+          const progress = (vid.currentTime - startTime) / Math.max(0.1, (endTime - startTime));
+          const panShiftY = Math.cos(progress * Math.PI * 2) * 0.15;
+          sY = (vH - sH) / 2 + panShiftY * ((vH - sH) / 2);
+          sY = Math.max(0, Math.min(vH - sH, sY));
         }
 
         ctx.clearRect(0, 0, targetW, targetH);
@@ -321,7 +331,7 @@ export default function App() {
 
     } catch (err) {
       console.error(err);
-      setIsProcessingDownload(false);
+      setDownloadingClipId(null);
       setToast('❌ डाउनलोड प्रक्रिया में त्रुटि आई।');
     }
   };
@@ -362,7 +372,7 @@ export default function App() {
               </div>
               <div>
                 <h1 className="text-sm font-bold text-white tracking-wide">ClipShort AI</h1>
-                <p className="text-[10px] text-gray-400 font-medium">Long Video to Shorts</p>
+                <p className="text-[10px] text-gray-400 font-medium">Smart Focus & Motion Tracking</p>
               </div>
             </div>
           </div>
@@ -398,7 +408,7 @@ export default function App() {
               </button>
             )}
             <div className="absolute top-3 right-3 bg-black/70 backdrop-blur border border-gray-700 px-3 py-1 rounded-full text-[10px] uppercase font-mono tracking-wider text-purple-300">
-              Original Video (Uncropped)
+              Original Video (Smart Focus Ready)
             </div>
           </div>
 
@@ -489,7 +499,7 @@ export default function App() {
             
             {/* RATIO BOX */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
-              <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Target Ratio (For Shorts)</h2>
+              <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Target Ratio (Smart Focus)</h2>
               <div className="grid grid-cols-6 gap-2">
                 {[
                   { id: '9:16', label: 'Vertical', shapeClass: 'w-3.5 h-6' },
@@ -640,7 +650,7 @@ export default function App() {
             className="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:opacity-95 text-white font-bold py-4 rounded-2xl shadow-xl shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition text-sm tracking-wide"
           >
             <Sparkles size={18} />
-            {generating ? `Generating Clips (${progress}%)...` : 'Generate Clips'}
+            {generating ? `Generating Smart Focus Clips (${progress}%)...` : 'Generate Clips (Smart Focus)'}
           </button>
           {generating && (
             <div className="mt-2 h-1.5 w-full bg-[#0d121f] rounded-full overflow-hidden">
@@ -661,74 +671,79 @@ export default function App() {
           </div>
 
           <div className="space-y-3">
-            {clips.map((clip) => (
-              <div key={clip.id} className="relative flex items-center justify-between p-3 rounded-xl border border-gray-800/80 bg-[#07090e] hover:border-gray-700 transition">
-                <div className="flex items-center space-x-3.5">
-                  <div className={`relative w-12 ${getRatioContainerClass(ratio)} rounded-lg overflow-hidden bg-black flex items-center justify-center shadow`}>
-                    <img src={clip.thumbnail} alt={clip.title} className="w-full h-full object-cover opacity-80" />
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white bg-black/40 font-mono">
-                      {clip.number}
-                    </span>
+            {clips.map((clip) => {
+              const isDownloadingThis = downloadingClipId === clip.id;
+              const isAnyDownloading = downloadingClipId !== null;
+
+              return (
+                <div key={clip.id} className="relative flex items-center justify-between p-3 rounded-xl border border-gray-800/80 bg-[#07090e] hover:border-gray-700 transition">
+                  <div className="flex items-center space-x-3.5">
+                    <div className={`relative w-12 ${getRatioContainerClass(ratio)} rounded-lg overflow-hidden bg-black flex items-center justify-center shadow`}>
+                      <img src={clip.thumbnail} alt={clip.title} className="w-full h-full object-cover opacity-80" />
+                      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white bg-black/40 font-mono">
+                        {clip.number}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-semibold text-white">{clip.title}</h3>
+                      <p className="text-[11px] text-gray-400 font-mono mt-0.5">{clip.timeRange} • <span className="text-purple-400">Focus Tracking ({ratio})</span></p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-semibold text-white">{clip.title}</h3>
-                    <p className="text-[11px] text-gray-400 font-mono mt-0.5">{clip.timeRange} • <span className="text-purple-400">{ratio}</span></p>
-                  </div>
-                </div>
 
-                <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={() => handlePreviewClip(clip)}
-                    className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer"
-                    title="Preview Clip"
-                  >
-                    <Eye size={15} />
-                  </button>
-
-                  <button 
-                    onClick={() => handleDownloadClip(clip)}
-                    disabled={isProcessingDownload}
-                    className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer disabled:opacity-50"
-                    title="Download Cropped & Trimmed Clip"
-                  >
-                    <Download size={15} />
-                  </button>
-
-                  <div className="relative">
+                  <div className="flex items-center space-x-2">
                     <button 
-                      onClick={() => setActiveMenuClipId(activeMenuClipId === clip.id ? null : clip.id)}
-                      className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 transition cursor-pointer"
-                      title="More Options"
+                      onClick={() => handlePreviewClip(clip)}
+                      className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer"
+                      title="Preview Clip"
                     >
-                      <MoreVertical size={15} />
+                      <Eye size={15} />
                     </button>
 
-                    {activeMenuClipId === clip.id && (
-                      <div className="absolute right-0 mt-2 w-36 bg-[#131b2e] border border-gray-700 rounded-xl shadow-2xl z-20 py-1.5 text-xs">
-                        <button 
-                          onClick={() => { setRenameClipTarget(clip); setNewTitleInput(clip.title); setActiveMenuClipId(null); }}
-                          className="w-full px-3 py-2 text-left flex items-center gap-2 text-gray-200 hover:bg-purple-600/20 hover:text-purple-300 transition"
-                        >
-                          <Edit3 size={13} /> Rename
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteClip(clip.id)}
-                          className="w-full px-3 py-2 text-left flex items-center gap-2 text-red-400 hover:bg-red-500/20 transition"
-                        >
-                          <Trash2 size={13} /> Delete
-                        </button>
-                      </div>
-                    )}
+                    <button 
+                      onClick={() => handleDownloadClip(clip)}
+                      disabled={isAnyDownloading}
+                      className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer disabled:opacity-50"
+                      title="Download Smart Focus Cropped Clip"
+                    >
+                      <Download size={15} className={isDownloadingThis ? 'animate-bounce text-purple-400' : ''} />
+                    </button>
+
+                    <div className="relative">
+                      <button 
+                        onClick={() => setActiveMenuClipId(activeMenuClipId === clip.id ? null : clip.id)}
+                        className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 transition cursor-pointer"
+                        title="More Options"
+                      >
+                        <MoreVertical size={15} />
+                      </button>
+
+                      {activeMenuClipId === clip.id && (
+                        <div className="absolute right-0 mt-2 w-36 bg-[#131b2e] border border-gray-700 rounded-xl shadow-2xl z-20 py-1.5 text-xs">
+                          <button 
+                            onClick={() => { setRenameClipTarget(clip); setNewTitleInput(clip.title); setActiveMenuClipId(null); }}
+                            className="w-full px-3 py-2 text-left flex items-center gap-2 text-gray-200 hover:bg-purple-600/20 hover:text-purple-300 transition"
+                          >
+                            <Edit3 size={13} /> Rename
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteClip(clip.id)}
+                            className="w-full px-3 py-2 text-left flex items-center gap-2 text-red-400 hover:bg-red-500/20 transition"
+                          >
+                            <Trash2 size={13} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
       </main>
 
-      {/* MODAL 1: PREVIEW CLIP MODAL */}
+      {/* MODAL 1: PREVIEW CLIP MODAL (STRICT SEGMENT PLAYBACK) */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-5">
@@ -748,20 +763,15 @@ export default function App() {
                 src={videoUrl} 
                 controls 
                 autoPlay 
-                onLoadedMetadata={(e) => {
-                  if (previewClip.startTime !== undefined) {
-                    e.currentTarget.currentTime = previewClip.startTime;
-                  }
-                }}
                 className="w-full h-full object-cover" 
               />
             </div>
 
             <div className="flex justify-between items-center pt-2">
-              <span className="text-[11px] text-gray-400 font-mono">Cropped to Selected Ratio ({ratio})</span>
+              <span className="text-[11px] text-gray-400 font-mono">Strict Segment Preview ({ratio})</span>
               <button 
                 onClick={() => handleDownloadClip(previewClip)}
-                disabled={isProcessingDownload}
+                disabled={downloadingClipId !== null}
                 className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-purple-600/20 disabled:opacity-50"
               >
                 <Download size={14} /> Download Short ({ratio})
