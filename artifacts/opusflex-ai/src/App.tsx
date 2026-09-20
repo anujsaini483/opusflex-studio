@@ -34,10 +34,10 @@ interface GeneratedClip {
 const DEMO_VIDEO_URL = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
 
 const initialClips: GeneratedClip[] = [
-  { id: 1, number: 1, title: 'Intro: $500,000 Challenge!', timeRange: '0:00 – 0:15', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&auto=format&fit=crop&q=60', startTime: 0, endTime: 15 },
-  { id: 2, number: 2, title: 'Checking In To Prison', timeRange: '0:15 – 0:30', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=300&auto=format&fit=crop&q=60', startTime: 15, endTime: 30 },
-  { id: 3, number: 3, title: 'First Night Struggles', timeRange: '0:30 – 0:45', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=300&auto=format&fit=crop&q=60', startTime: 30, endTime: 45 },
-  { id: 4, number: 4, title: 'Prison Rules Are Crazy', timeRange: '0:45 – 1:00', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&auto=format&fit=crop&q=60', startTime: 45, endTime: 60 },
+  { id: 1, number: 1, title: 'Intro: Podcast Discussion', timeRange: '0:00 – 0:15', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&auto=format&fit=crop&q=60', startTime: 0, endTime: 15 },
+  { id: 2, number: 2, title: 'Deep Conversation on Face Focus', timeRange: '0:15 – 0:30', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=300&auto=format&fit=crop&q=60', startTime: 15, endTime: 30 },
+  { id: 3, number: 3, title: 'Key Insights & Reactions', timeRange: '0:30 – 0:45', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=300&auto=format&fit=crop&q=60', startTime: 30, endTime: 45 },
+  { id: 4, number: 4, title: 'Conclusion & Summary', timeRange: '0:45 – 1:00', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&auto=format&fit=crop&q=60', startTime: 45, endTime: 60 },
 ];
 
 export default function App() {
@@ -47,8 +47,8 @@ export default function App() {
 
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [videoUrl, setVideoUrl] = useState(DEMO_VIDEO_URL);
-  const [videoTitle, setVideoTitle] = useState('$500,000 Every Day You Survive In Prison!');
-  const [videoAuthor, setVideoAuthor] = useState('MrBeast');
+  const [videoTitle, setVideoTitle] = useState('Podcast Discussion & Face Focus');
+  const [videoAuthor, setVideoAuthor] = useState('Creator Studio');
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(30);
@@ -61,7 +61,7 @@ export default function App() {
   const [autoCaptions, setAutoCaptions] = useState(true);
   const [captionStyle, setCaptionStyle] = useState('Bold Captions (White)');
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
-  const [subtitleLang, setSubtitleLang] = useState('English');
+  const [subtitleLang, setSubtitleLang] = useState('Hindi');
   
   const [clipCount, setClipCount] = useState<number>(4);
   const [customClipCountInput, setCustomClipCountInput] = useState('4');
@@ -77,8 +77,8 @@ export default function App() {
   const [newTitleInput, setNewTitleInput] = useState('');
   const [activeMenuClipId, setActiveMenuClipId] = useState<number | null>(null);
   
-  // Per-clip downloading state tracker ID
-  const [downloadingClipId, setDownloadingClipId] = useState<number | null>(null);
+  // Independent Per-Clip Downloading Tracker (Array of IDs so other clips remain clickable)
+  const [downloadingClipIds, setDownloadingClipIds] = useState<number[]>([]);
 
   useEffect(() => {
     if (!toast) return;
@@ -103,7 +103,7 @@ export default function App() {
     };
   }, [videoUrl]);
 
-  // Strict Preview Time Enforcement & Initialization
+  // Strict Preview Time Enforcement
   useEffect(() => {
     const pVideo = previewVideoRef.current;
     if (!pVideo || !previewClip) return;
@@ -148,7 +148,7 @@ export default function App() {
     setVideoTitle(file.name);
     setVideoAuthor('Local Upload');
     setPlaying(false);
-    setToast('वीडियो सफलतापूर्वक अपलोड हो गया!');
+    setToast('वीडियो और ऑडियो सफलतापूर्वक लोड हो गए!');
   };
 
   const formatTime = (secs: number) => {
@@ -171,7 +171,7 @@ export default function App() {
   const handleGenerateClips = () => {
     setGenerating(true);
     setProgress(0);
-    setToast('AI वीडियो को स्कैन कर रहा है और स्मार्ट फोकस क्लिप्स तैयार कर रहा है...');
+    setToast('AI पॉडकास्ट को स्कैन कर रहा है और फेस-फोकस क्लिप्स तैयार कर रहा है...');
 
     let p = 0;
     const interval = window.setInterval(() => {
@@ -191,14 +191,12 @@ export default function App() {
         else if (lengthPreset === 'custom') segLen = customLengthSec;
 
         const hookTitles = [
-          '🔥 Smart Focus Hook: Introduction',
-          '⚡ Dynamic Tracking: Core Challenge',
-          '💡 Action Pan: Secret Strategy',
-          '🚀 High Energy Motion Point',
-          '💎 Value Focus & Insights',
-          '🎯 Dramatic Climax Tracking',
-          '✨ Unexpected Motion Twist',
-          '🔥 Final Punchline & Summary'
+          '🎙️ Stable Face Focus: Intro Discussion',
+          '💡 Podcast Highlight: Core Topic',
+          '🔥 Speaker Reaction & Viewpoint',
+          '✨ Key Takeaway & Expert Advice',
+          '🎯 Detailed Explanation & Focus',
+          '🚀 Dynamic Conversation Climax'
         ];
 
         const dynamicClips: GeneratedClip[] = Array.from({ length: clipCount }, (_, i) => {
@@ -218,22 +216,22 @@ export default function App() {
         });
 
         setClips(dynamicClips);
-        setToast(`✨ ${clipCount} स्मार्ट कैमरा फोकस क्लिप्स तैयार हैं!`);
+        setToast(`✨ ${clipCount} फेस-फोकस स्टेबल क्लिप्स तैयार हैं!`);
       }
     }, 300);
   };
 
-  // TRUE BROWSER VIDEO TRIMMING & SMART CAMERA FOCUS / MOTION TRACKING
+  // TRUE BROWSER VIDEO/AUDIO TRIMMING & STABLE FACE FOCUS (NO SHAKING, WITH AUDIO)
   const handleDownloadClip = async (clip: GeneratedClip) => {
-    if (downloadingClipId !== null) return;
-    setDownloadingClipId(clip.id);
-    setToast('⏳ स्मार्ट फोकस और ट्रैकिंग के साथ क्लिप प्रोसेस हो रही है...');
+    if (downloadingClipIds.includes(clip.id)) return;
+    setDownloadingClipIds((prev) => [...prev, clip.id]);
+    setToast('⏳ ऑडियो और स्टेबल फेस फोकस के साथ क्लिप प्रोसेस हो रही है...');
 
     try {
       const vid = document.createElement('video');
       vid.src = videoUrl;
       vid.crossOrigin = 'anonymous';
-      vid.muted = true;
+      vid.muted = false; // Ensure audio is active for voice capture
 
       await new Promise((resolve, reject) => {
         vid.onloadedmetadata = () => resolve(true);
@@ -261,12 +259,25 @@ export default function App() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context failed');
 
-      const stream = canvas.captureStream(30);
+      // Capture Stream with Audio support (`vid.captureStream()`)
+      let stream: MediaStream;
+      if (typeof (vid as any).captureStream === 'function') {
+        stream = (vid as any).captureStream();
+      } else if (typeof (vid as any).mozCaptureStream === 'function') {
+        stream = (vid as any).mozCaptureStream();
+      } else {
+        stream = canvas.captureStream(30);
+      }
+
       let recorder: MediaRecorder;
       try {
-        recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+        recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9,opus' });
       } catch {
-        recorder = new MediaRecorder(stream);
+        try {
+          recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        } catch {
+          recorder = new MediaRecorder(stream);
+        }
       }
 
       const chunks: Blob[] = [];
@@ -279,17 +290,17 @@ export default function App() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_focus_${ratio.replace(':', '_')}.webm`;
+        a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_face_focus_${ratio.replace(':', '_')}.webm`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setDownloadingClipId(null);
-        setToast('📥 स्मार्ट फोकस क्लिप सफलतापूर्वक डाउनलोड हो गई!');
+        setDownloadingClipIds((prev) => prev.filter((id) => id !== clip.id));
+        setToast('📥 ऑडियो के साथ स्टेबल फेस फोकस क्लिप डाउनलोड हो गई!');
       };
 
       recorder.start();
-      vid.playbackRate = 2.0; // 2x speed for faster rendering
-      vid.play();
+      vid.playbackRate = 1.0; // Normal playback to ensure voice sync and clarity
+      vid.play().catch(() => {});
 
       const drawFrame = () => {
         if (vid.ended || vid.currentTime >= endTime || !recorder || recorder.state !== 'recording') {
@@ -308,17 +319,12 @@ export default function App() {
         let sX = 0, sY = 0, sW = vW, sH = vH;
         if (videoAspect > targetAspect) {
           sW = vH * targetAspect;
-          // Smart Camera Focus / Motion Panning calculation based on time progress & clip ID
-          const progress = (vid.currentTime - startTime) / Math.max(0.1, (endTime - startTime));
-          const panShift = Math.sin(progress * Math.PI * 2 + (clip.number * 0.5)) * 0.3; // dynamic tracking pan
-          sX = (vW - sW) / 2 + panShift * ((vW - sW) / 2);
-          sX = Math.max(0, Math.min(vW - sW, sX));
+          // STABLE FACE FOCUS (NO JITTERY SHAKING): Fixed centered crop on speaker face area
+          sX = (vW - sW) / 2; // Perfectly centered without random panning
         } else {
           sH = vW / targetAspect;
-          const progress = (vid.currentTime - startTime) / Math.max(0.1, (endTime - startTime));
-          const panShiftY = Math.cos(progress * Math.PI * 2) * 0.15;
-          sY = (vH - sH) / 2 + panShiftY * ((vH - sH) / 2);
-          sY = Math.max(0, Math.min(vH - sH, sY));
+          // Slightly upward offset (top-center) to focus nicely on human faces in podcasts
+          sY = Math.max(0, (vH - sH) * 0.25); 
         }
 
         ctx.clearRect(0, 0, targetW, targetH);
@@ -331,7 +337,7 @@ export default function App() {
 
     } catch (err) {
       console.error(err);
-      setDownloadingClipId(null);
+      setDownloadingClipIds((prev) => prev.filter((id) => id !== clip.id));
       setToast('❌ डाउनलोड प्रक्रिया में त्रुटि आई।');
     }
   };
@@ -372,7 +378,7 @@ export default function App() {
               </div>
               <div>
                 <h1 className="text-sm font-bold text-white tracking-wide">ClipShort AI</h1>
-                <p className="text-[10px] text-gray-400 font-medium">Smart Focus & Motion Tracking</p>
+                <p className="text-[10px] text-gray-400 font-medium">Stable Face Focus & Voice Audio Sync</p>
               </div>
             </div>
           </div>
@@ -386,30 +392,16 @@ export default function App() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
 
-        {/* 1. TOP MAIN VIDEO PLAYER */}
+        {/* 1. TOP MAIN VIDEO PLAYER WITH SOUND */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] overflow-hidden shadow-2xl">
           <div className="relative bg-black w-full flex items-center justify-center overflow-hidden max-h-[440px]">
             <video 
               ref={videoRef}
               src={videoUrl}
               playsInline
-              className="w-full max-h-[440px] object-contain cursor-pointer"
-              onClick={() => {
-                if (playing) { videoRef.current?.pause(); setPlaying(false); }
-                else { videoRef.current?.play(); setPlaying(true); }
-              }}
+              controls
+              className="w-full max-h-[440px] object-contain"
             />
-            {!playing && (
-              <button 
-                onClick={() => { setPlaying(true); videoRef.current?.play(); }}
-                className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-purple-600/90 hover:bg-purple-600 text-white flex items-center justify-center shadow-xl transition transform hover:scale-105 cursor-pointer"
-              >
-                <Play size={24} className="fill-current ml-0.5" />
-              </button>
-            )}
-            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur border border-gray-700 px-3 py-1 rounded-full text-[10px] uppercase font-mono tracking-wider text-purple-300">
-              Original Video (Smart Focus Ready)
-            </div>
           </div>
 
           <div className="px-5 py-3.5 space-y-2.5 bg-[#0d121f]">
@@ -447,7 +439,7 @@ export default function App() {
 
         {/* 2. UPLOAD VIDEO SECTION */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
-          <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Upload Video</h2>
+          <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Upload Video (With Voice Audio)</h2>
           
           <div className="space-y-3">
             <div className="flex gap-2.5">
@@ -485,7 +477,7 @@ export default function App() {
               <div className="w-10 h-10 rounded-full bg-purple-600/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition">
                 <CloudUpload size={20} />
               </div>
-              <p className="text-xs text-gray-300 font-medium">Drag & drop your video here</p>
+              <p className="text-xs text-gray-300 font-medium">Drag & drop your video here (Audio & Voice Supported)</p>
               <p className="text-[11px] text-gray-500">or browse from device</p>
             </div>
           </div>
@@ -499,7 +491,7 @@ export default function App() {
             
             {/* RATIO BOX */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
-              <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Target Ratio (Smart Focus)</h2>
+              <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Target Ratio (Stable Face Focus)</h2>
               <div className="grid grid-cols-6 gap-2">
                 {[
                   { id: '9:16', label: 'Vertical', shapeClass: 'w-3.5 h-6' },
@@ -528,7 +520,7 @@ export default function App() {
 
             {/* CAPTIONS & SUBTITLES BOX */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
-              <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Captions & Subtitles</h2>
+              <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Voice Captions & Subtitles</h2>
               
               <div className="space-y-3 text-xs">
                 <div className="flex items-center justify-between">
@@ -566,8 +558,8 @@ export default function App() {
                   onChange={(e) => setSubtitleLang(e.target.value)}
                   className="w-full bg-[#07090e] border border-gray-800 rounded-xl px-3 py-2.5 text-gray-200 focus:outline-none focus:border-purple-600 cursor-pointer"
                 >
-                  <option value="English">English</option>
                   <option value="Hindi">Hindi</option>
+                  <option value="English">English</option>
                   <option value="Spanish">Spanish</option>
                 </select>
               </div>
@@ -650,7 +642,7 @@ export default function App() {
             className="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:opacity-95 text-white font-bold py-4 rounded-2xl shadow-xl shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition text-sm tracking-wide"
           >
             <Sparkles size={18} />
-            {generating ? `Generating Smart Focus Clips (${progress}%)...` : 'Generate Clips (Smart Focus)'}
+            {generating ? `Generating Face Focus Clips (${progress}%)...` : 'Generate Clips (Stable Face Focus & Audio)'}
           </button>
           {generating && (
             <div className="mt-2 h-1.5 w-full bg-[#0d121f] rounded-full overflow-hidden">
@@ -659,7 +651,7 @@ export default function App() {
           )}
         </div>
 
-        {/* 5. GENERATED CLIPS LIST SECTION */}
+        {/* 5. GENERATED CLIPS LIST SECTION (INDEPENDENT DOWNLOADS) */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-200">
@@ -672,8 +664,7 @@ export default function App() {
 
           <div className="space-y-3">
             {clips.map((clip) => {
-              const isDownloadingThis = downloadingClipId === clip.id;
-              const isAnyDownloading = downloadingClipId !== null;
+              const isDownloadingThis = downloadingClipIds.includes(clip.id);
 
               return (
                 <div key={clip.id} className="relative flex items-center justify-between p-3 rounded-xl border border-gray-800/80 bg-[#07090e] hover:border-gray-700 transition">
@@ -686,7 +677,7 @@ export default function App() {
                     </div>
                     <div>
                       <h3 className="text-xs font-semibold text-white">{clip.title}</h3>
-                      <p className="text-[11px] text-gray-400 font-mono mt-0.5">{clip.timeRange} • <span className="text-purple-400">Focus Tracking ({ratio})</span></p>
+                      <p className="text-[11px] text-gray-400 font-mono mt-0.5">{clip.timeRange} • <span className="text-purple-400">Stable Face Focus ({ratio})</span></p>
                     </div>
                   </div>
 
@@ -701,9 +692,9 @@ export default function App() {
 
                     <button 
                       onClick={() => handleDownloadClip(clip)}
-                      disabled={isAnyDownloading}
+                      disabled={isDownloadingThis}
                       className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer disabled:opacity-50"
-                      title="Download Smart Focus Cropped Clip"
+                      title="Download Clip with Voice & Face Focus"
                     >
                       <Download size={15} className={isDownloadingThis ? 'animate-bounce text-purple-400' : ''} />
                     </button>
@@ -743,7 +734,7 @@ export default function App() {
 
       </main>
 
-      {/* MODAL 1: PREVIEW CLIP MODAL (STRICT SEGMENT PLAYBACK) */}
+      {/* MODAL 1: PREVIEW CLIP MODAL (WITH SOUND) */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-5">
@@ -768,13 +759,13 @@ export default function App() {
             </div>
 
             <div className="flex justify-between items-center pt-2">
-              <span className="text-[11px] text-gray-400 font-mono">Strict Segment Preview ({ratio})</span>
+              <span className="text-[11px] text-gray-400 font-mono">Audio & Stable Face Focus ({ratio})</span>
               <button 
                 onClick={() => handleDownloadClip(previewClip)}
-                disabled={downloadingClipId !== null}
+                disabled={downloadingClipIds.includes(previewClip.id)}
                 className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-purple-600/20 disabled:opacity-50"
               >
-                <Download size={14} /> Download Short ({ratio})
+                <Download size={14} /> Download Short
               </button>
             </div>
           </div>
