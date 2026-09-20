@@ -39,9 +39,6 @@ const initialClips: GeneratedClip[] = [
   { id: 3, number: 3, title: 'First Night Struggles', timeRange: '1:12 – 1:48', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=300&auto=format&fit=crop&q=60', startTime: 72, endTime: 108 },
   { id: 4, number: 4, title: 'Prison Rules Are Crazy', timeRange: '1:48 – 2:24', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&auto=format&fit=crop&q=60', startTime: 108, endTime: 144 },
   { id: 5, number: 5, title: 'Food In Prison...', timeRange: '2:24 – 3:00', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&auto=format&fit=crop&q=60', startTime: 144, endTime: 180 },
-  { id: 6, number: 6, title: 'Yard Time With Inmates', timeRange: '3:00 – 3:36', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=300&auto=format&fit=crop&q=60', startTime: 180, endTime: 216 },
-  { id: 7, number: 7, title: 'Hardest Part Of Prison!', timeRange: '3:36 – 4:12', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=300&auto=format&fit=crop&q=60', startTime: 216, endTime: 252 },
-  { id: 8, number: 8, title: 'Surviving Day By Day', timeRange: '4:12 – 4:48', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300&auto=format&fit=crop&q=60', startTime: 252, endTime: 288 },
 ];
 
 export default function App() {
@@ -67,8 +64,8 @@ export default function App() {
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
   const [subtitleLang, setSubtitleLang] = useState('English');
   
-  const [clipCount, setClipCount] = useState<number>(8);
-  const [customClipCountInput, setCustomClipCountInput] = useState('8');
+  const [clipCount, setClipCount] = useState<number>(5);
+  const [customClipCountInput, setCustomClipCountInput] = useState('5');
   const [showClipCountModal, setShowClipCountModal] = useState(false);
 
   const [generating, setGenerating] = useState(false);
@@ -104,6 +101,24 @@ export default function App() {
     };
   }, [videoUrl]);
 
+  // Handle preview video time constraints (Strict Clip Cutting Enforcement)
+  useEffect(() => {
+    const pVideo = previewVideoRef.current;
+    if (!pVideo || !previewClip) return;
+
+    const handleTimeCheck = () => {
+      if (previewClip.endTime !== undefined && pVideo.currentTime >= previewClip.endTime) {
+        pVideo.pause();
+        pVideo.currentTime = previewClip.startTime || 0;
+      }
+    };
+
+    pVideo.addEventListener('timeupdate', handleTimeCheck);
+    return () => {
+      pVideo.removeEventListener('timeupdate', handleTimeCheck);
+    };
+  }, [previewClip]);
+
   const handleUploadUrl = () => {
     const url = videoUrlInput.trim();
     if (!url) {
@@ -137,22 +152,22 @@ export default function App() {
     return `${m}:${s}`;
   };
 
-  // Ratio CSS Mapper for generated short clips preview modal
+  // Strict Ratio Container Mapper for Generated Short Clips
   const getRatioContainerClass = (r: RatioType) => {
     switch (r) {
-      case '9:16': return 'aspect-[9/16] max-h-[480px]';
-      case '16:9': return 'aspect-[16/9]';
-      case '1:1': return 'aspect-square max-h-[420px]';
-      case '4:5': return 'aspect-[4/5] max-h-[450px]';
-      case '3:4': return 'aspect-[3/4] max-h-[450px]';
-      default: return 'aspect-[9/16] max-h-[480px]';
+      case '9:16': return 'aspect-[9/16] max-h-[480px] max-w-[270px]';
+      case '16:9': return 'aspect-[16/9] max-w-[500px]';
+      case '1:1': return 'aspect-square max-h-[400px] max-w-[400px]';
+      case '4:5': return 'aspect-[4/5] max-h-[440px] max-w-[350px]';
+      case '3:4': return 'aspect-[3/4] max-h-[440px] max-w-[330px]';
+      default: return 'aspect-[9/16] max-h-[480px] max-w-[270px]';
     }
   };
 
   const handleGenerateClips = () => {
     setGenerating(true);
     setProgress(0);
-    setToast('AI वीडियो को स्कैन कर रहा है और हुक क्लिप्स बना रहा है...');
+    setToast('AI वीडियो को स्कैन कर रहा है और चुनिंदा क्लिप्स काट रहा है...');
 
     let p = 0;
     const interval = window.setInterval(() => {
@@ -199,7 +214,7 @@ export default function App() {
         });
 
         setClips(dynamicClips);
-        setToast(`✨ ${clipCount} परफेक्ट हुक क्लिप्स तैयार कर दी गई हैं!`);
+        setToast(`✨ ${clipCount} सटीक क्लिप्स (${ratio} रेशो में) तैयार हैं!`);
       }
     }, 350);
   };
@@ -207,11 +222,11 @@ export default function App() {
   const handleDownloadClip = (clip: GeneratedClip) => {
     const a = document.createElement('a');
     a.href = videoUrl;
-    a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
+    a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${ratio.replace(':', '_')}.mp4`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setToast(`📥 ${clip.title} डाउनलोड हो रही है...`);
+    setToast(`📥 ${clip.title} (${ratio}) डाउनलोड हो रही है...`);
   };
 
   const handleDeleteClip = (id: number) => {
@@ -264,7 +279,7 @@ export default function App() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
 
-        {/* 1. TOP VIDEO PLAYER CARD (Preserves Original Video Ratio) */}
+        {/* 1. TOP MAIN VIDEO PLAYER (Preserves Original Video Aspect Ratio via object-contain) */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] overflow-hidden shadow-2xl">
           <div className="relative bg-black w-full flex items-center justify-center overflow-hidden max-h-[440px]">
             <video 
@@ -286,7 +301,7 @@ export default function App() {
               </button>
             )}
             <div className="absolute top-3 right-3 bg-black/70 backdrop-blur border border-gray-700 px-3 py-1 rounded-full text-[10px] uppercase font-mono tracking-wider text-purple-300">
-              Original Ratio View
+              Original Video (Uncropped)
             </div>
           </div>
 
@@ -375,7 +390,7 @@ export default function App() {
           {/* Left Column */}
           <div className="space-y-5">
             
-            {/* RATIO BOX (Target Ratio for Generated Shorts) */}
+            {/* RATIO BOX (Enforces Chosen Crop Ratio for Generated Shorts) */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Target Ratio (For Shorts)</h2>
               <div className="grid grid-cols-6 gap-2">
@@ -541,7 +556,7 @@ export default function App() {
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-200">
-              Generated Clips ({clips.length})
+              Generated Clips ({clips.length}) - Ratio: {ratio}
             </h2>
             <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-800 bg-[#07090e] text-xs text-gray-300 hover:border-purple-600 transition cursor-pointer">
               <Eye size={14} /> Preview All
@@ -552,7 +567,7 @@ export default function App() {
             {clips.map((clip) => (
               <div key={clip.id} className="relative flex items-center justify-between p-3 rounded-xl border border-gray-800/80 bg-[#07090e] hover:border-gray-700 transition">
                 <div className="flex items-center space-x-3.5">
-                  <div className="relative w-12 aspect-[9/16] rounded-lg overflow-hidden bg-black flex items-center justify-center shadow">
+                  <div className={`relative w-12 ${getRatioContainerClass(ratio)} rounded-lg overflow-hidden bg-black flex items-center justify-center shadow`}>
                     <img src={clip.thumbnail} alt={clip.title} className="w-full h-full object-cover opacity-80" />
                     <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white bg-black/40 font-mono">
                       {clip.number}
@@ -560,7 +575,7 @@ export default function App() {
                   </div>
                   <div>
                     <h3 className="text-xs font-semibold text-white">{clip.title}</h3>
-                    <p className="text-[11px] text-gray-400 font-mono mt-0.5">{clip.timeRange}</p>
+                    <p className="text-[11px] text-gray-400 font-mono mt-0.5">{clip.timeRange} • <span className="text-purple-400">{ratio}</span></p>
                   </div>
                 </div>
 
@@ -615,21 +630,22 @@ export default function App() {
 
       </main>
 
-      {/* MODAL 1: PREVIEW CLIP MODAL (Enforces exact start/end time slice & target ratio) */}
+      {/* MODAL 1: PREVIEW CLIP MODAL (Enforces exact start/end time slice & true crop aspect ratio) */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl space-y-4 p-5">
+          <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-5">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-white truncate">{previewClip.title}</h3>
-                <p className="text-[11px] text-purple-400 font-mono">Segment: {previewClip.timeRange} ({previewClip.duration})</p>
+                <p className="text-[11px] text-purple-400 font-mono">Segment: {previewClip.timeRange} | Format: {ratio}</p>
               </div>
               <button onClick={() => setPreviewClip(null)} className="text-gray-400 hover:text-white p-1 rounded-lg">
                 <X size={18} />
               </button>
             </div>
             
-            <div className={`relative bg-black rounded-xl overflow-hidden flex items-center justify-center mx-auto w-full ${getRatioContainerClass(ratio)}`}>
+            {/* The cropped container using object-cover to match AI shorts layout */}
+            <div className={`relative bg-black rounded-xl overflow-hidden flex items-center justify-center mx-auto w-full ${getRatioContainerClass(ratio)} shadow-inner border border-gray-800`}>
               <video 
                 ref={previewVideoRef}
                 src={videoUrl} 
@@ -640,23 +656,17 @@ export default function App() {
                     e.currentTarget.currentTime = previewClip.startTime;
                   }
                 }}
-                onTimeUpdate={(e) => {
-                  if (previewClip.endTime !== undefined && e.currentTarget.currentTime >= previewClip.endTime) {
-                    e.currentTarget.pause();
-                    e.currentTarget.currentTime = previewClip.startTime || 0;
-                  }
-                }}
                 className="w-full h-full object-cover" 
               />
             </div>
 
             <div className="flex justify-between items-center pt-2">
-              <span className="text-[10px] text-gray-400">Target Ratio: {ratio}</span>
+              <span className="text-[11px] text-gray-400 font-mono">Cropped to Selected Ratio ({ratio})</span>
               <button 
                 onClick={() => handleDownloadClip(previewClip)}
-                className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer"
+                className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-purple-600/20"
               >
-                <Download size={14} /> Download Short
+                <Download size={14} /> Download Short ({ratio})
               </button>
             </div>
           </div>
