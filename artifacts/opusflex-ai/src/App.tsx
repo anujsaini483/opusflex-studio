@@ -34,17 +34,17 @@ interface GeneratedClip {
 const DEMO_VIDEO_URL = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
 
 const initialClips: GeneratedClip[] = [
-  { id: 1, number: 1, title: 'Intro: $500,000 Challenge!', timeRange: '0:00 – 0:36', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&auto=format&fit=crop&q=60', startTime: 0, endTime: 36 },
-  { id: 2, number: 2, title: 'Checking In To Prison', timeRange: '0:36 – 1:12', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=300&auto=format&fit=crop&q=60', startTime: 36, endTime: 72 },
-  { id: 3, number: 3, title: 'First Night Struggles', timeRange: '1:12 – 1:48', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=300&auto=format&fit=crop&q=60', startTime: 72, endTime: 108 },
-  { id: 4, number: 4, title: 'Prison Rules Are Crazy', timeRange: '1:48 – 2:24', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&auto=format&fit=crop&q=60', startTime: 108, endTime: 144 },
-  { id: 5, number: 5, title: 'Food In Prison...', timeRange: '2:24 – 3:00', duration: '0:36', thumbnail: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&auto=format&fit=crop&q=60', startTime: 144, endTime: 180 },
+  { id: 1, number: 1, title: 'Intro: $500,000 Challenge!', timeRange: '0:00 – 0:15', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&auto=format&fit=crop&q=60', startTime: 0, endTime: 15 },
+  { id: 2, number: 2, title: 'Checking In To Prison', timeRange: '0:15 – 0:30', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=300&auto=format&fit=crop&q=60', startTime: 15, endTime: 30 },
+  { id: 3, number: 3, title: 'First Night Struggles', timeRange: '0:30 – 0:45', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=300&auto=format&fit=crop&q=60', startTime: 30, endTime: 45 },
+  { id: 4, number: 4, title: 'Prison Rules Are Crazy', timeRange: '0:45 – 1:00', duration: '15s', thumbnail: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&auto=format&fit=crop&q=60', startTime: 45, endTime: 60 },
 ];
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const hiddenCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [videoUrl, setVideoUrl] = useState(DEMO_VIDEO_URL);
@@ -55,8 +55,8 @@ export default function App() {
   const [duration, setDuration] = useState(30);
 
   const [ratio, setRatio] = useState<RatioType>('9:16');
-  const [lengthPreset, setLengthPreset] = useState<LengthType>('30-45');
-  const [customLengthSec, setCustomLengthSec] = useState(30);
+  const [lengthPreset, setLengthPreset] = useState<LengthType>('15-30');
+  const [customLengthSec, setCustomLengthSec] = useState(15);
   const [showLengthModal, setShowLengthModal] = useState(false);
 
   const [autoCaptions, setAutoCaptions] = useState(true);
@@ -64,8 +64,8 @@ export default function App() {
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
   const [subtitleLang, setSubtitleLang] = useState('English');
   
-  const [clipCount, setClipCount] = useState<number>(5);
-  const [customClipCountInput, setCustomClipCountInput] = useState('5');
+  const [clipCount, setClipCount] = useState<number>(4);
+  const [customClipCountInput, setCustomClipCountInput] = useState('4');
   const [showClipCountModal, setShowClipCountModal] = useState(false);
 
   const [generating, setGenerating] = useState(false);
@@ -77,6 +77,7 @@ export default function App() {
   const [renameClipTarget, setRenameClipTarget] = useState<GeneratedClip | null>(null);
   const [newTitleInput, setNewTitleInput] = useState('');
   const [activeMenuClipId, setActiveMenuClipId] = useState<number | null>(null);
+  const [isProcessingDownload, setIsProcessingDownload] = useState(false);
 
   useEffect(() => {
     if (!toast) return;
@@ -101,7 +102,7 @@ export default function App() {
     };
   }, [videoUrl]);
 
-  // Handle preview video time constraints (Strict Clip Cutting Enforcement)
+  // Strict Preview Time Enforcement
   useEffect(() => {
     const pVideo = previewVideoRef.current;
     if (!pVideo || !previewClip) return;
@@ -152,7 +153,6 @@ export default function App() {
     return `${m}:${s}`;
   };
 
-  // Strict Ratio Container Mapper for Generated Short Clips
   const getRatioContainerClass = (r: RatioType) => {
     switch (r) {
       case '9:16': return 'aspect-[9/16] max-h-[480px] max-w-[270px]';
@@ -167,7 +167,7 @@ export default function App() {
   const handleGenerateClips = () => {
     setGenerating(true);
     setProgress(0);
-    setToast('AI वीडियो को स्कैन कर रहा है और चुनिंदा क्लिप्स काट रहा है...');
+    setToast('AI वीडियो को स्कैन कर रहा है और सटीक क्लिप्स काट रहा है...');
 
     let p = 0;
     const interval = window.setInterval(() => {
@@ -178,12 +178,12 @@ export default function App() {
         setGenerating(false);
 
         const totalDur = duration > 0 ? duration : 180;
-        let segLen = 30;
-        if (lengthPreset === '15-30') segLen = 22;
-        else if (lengthPreset === '30-45') segLen = 36;
-        else if (lengthPreset === '45-60') segLen = 52;
-        else if (lengthPreset === '60-90') segLen = 75;
-        else if (lengthPreset === '90-120') segLen = 105;
+        let segLen = 15;
+        if (lengthPreset === '15-30') segLen = 15;
+        else if (lengthPreset === '30-45') segLen = 30;
+        else if (lengthPreset === '45-60') segLen = 45;
+        else if (lengthPreset === '60-90') segLen = 60;
+        else if (lengthPreset === '90-120') segLen = 90;
         else if (lengthPreset === 'custom') segLen = customLengthSec;
 
         const hookTitles = [
@@ -216,17 +216,114 @@ export default function App() {
         setClips(dynamicClips);
         setToast(`✨ ${clipCount} सटीक क्लिप्स (${ratio} रेशो में) तैयार हैं!`);
       }
-    }, 350);
+    }, 300);
   };
 
-  const handleDownloadClip = (clip: GeneratedClip) => {
-    const a = document.createElement('a');
-    a.href = videoUrl;
-    a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${ratio.replace(':', '_')}.mp4`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setToast(`📥 ${clip.title} (${ratio}) डाउनलोड हो रही है...`);
+  // TRUE BROWSER VIDEO TRIMMING & CROPPING USING CANVAS & MEDIA RECORDER
+  const handleDownloadClip = async (clip: GeneratedClip) => {
+    if (isProcessingDownload) return;
+    setIsProcessingDownload(true);
+    setToast('⏳ क्लिप को काटकर और क्रॉप करके तैयार किया जा रहा है...');
+
+    try {
+      const vid = document.createElement('video');
+      vid.src = videoUrl;
+      vid.crossOrigin = 'anonymous';
+      vid.muted = true;
+
+      await new Promise((resolve, reject) => {
+        vid.onloadedmetadata = () => resolve(true);
+        vid.onerror = (e) => reject(e);
+      });
+
+      const startTime = clip.startTime || 0;
+      const endTime = clip.endTime || (startTime + 15);
+      vid.currentTime = startTime;
+
+      await new Promise((resolve) => {
+        vid.onseeked = () => resolve(true);
+      });
+
+      // Set Canvas Dimensions based on selected ratio
+      let targetW = 720;
+      let targetH = 1280; // 9:16
+      if (ratio === '16:9') { targetW = 1280; targetH = 720; }
+      else if (ratio === '1:1') { targetW = 1080; targetH = 1080; }
+      else if (ratio === '4:5') { targetW = 864; targetH = 1080; }
+      else if (ratio === '3:4') { targetW = 810; targetH = 1080; }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context failed');
+
+      const stream = canvas.captureStream(30); // 30 FPS
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+      } catch {
+        recorder = new MediaRecorder(stream);
+      }
+
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${ratio.replace(':', '_')}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setIsProcessingDownload(false);
+        setToast('📥 क्लिप सफलतापूर्वक डाउनलोड हो गई!');
+      };
+
+      recorder.start();
+      vid.play();
+
+      const drawFrame = () => {
+        if (vid.ended || vid.currentTime >= endTime || !recorder || recorder.state !== 'recording') {
+          if (recorder && recorder.state === 'recording') {
+            recorder.stop();
+            vid.pause();
+          }
+          return;
+        }
+
+        // Object-fit cover cropping algorithm
+        const vW = vid.videoWidth;
+        const vH = vid.videoHeight;
+        const targetAspect = targetW / targetH;
+        const videoAspect = vW / vH;
+
+        let sX = 0, sY = 0, sW = vW, sH = vH;
+        if (videoAspect > targetAspect) {
+          sW = vH * targetAspect;
+          sX = (vW - sW) / 2;
+        } else {
+          sH = vW / targetAspect;
+          sY = (vH - sH) / 2;
+        }
+
+        ctx.clearRect(0, 0, targetW, targetH);
+        ctx.drawImage(vid, sX, sY, sW, sH, 0, 0, targetW, targetH);
+
+        requestAnimationFrame(drawFrame);
+      };
+
+      requestAnimationFrame(drawFrame);
+
+    } catch (err) {
+      console.error(err);
+      setIsProcessingDownload(false);
+      setToast('❌ डाउनलोड प्रक्रिया में त्रुटि आई।');
+    }
   };
 
   const handleDeleteClip = (id: number) => {
@@ -279,7 +376,7 @@ export default function App() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
 
-        {/* 1. TOP MAIN VIDEO PLAYER (Preserves Original Video Aspect Ratio via object-contain) */}
+        {/* 1. TOP MAIN VIDEO PLAYER */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] overflow-hidden shadow-2xl">
           <div className="relative bg-black w-full flex items-center justify-center overflow-hidden max-h-[440px]">
             <video 
@@ -390,7 +487,7 @@ export default function App() {
           {/* Left Column */}
           <div className="space-y-5">
             
-            {/* RATIO BOX (Enforces Chosen Crop Ratio for Generated Shorts) */}
+            {/* RATIO BOX */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Target Ratio (For Shorts)</h2>
               <div className="grid grid-cols-6 gap-2">
@@ -590,8 +687,9 @@ export default function App() {
 
                   <button 
                     onClick={() => handleDownloadClip(clip)}
-                    className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer"
-                    title="Download Clip"
+                    disabled={isProcessingDownload}
+                    className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer disabled:opacity-50"
+                    title="Download Cropped & Trimmed Clip"
                   >
                     <Download size={15} />
                   </button>
@@ -630,7 +728,7 @@ export default function App() {
 
       </main>
 
-      {/* MODAL 1: PREVIEW CLIP MODAL (Enforces exact start/end time slice & true crop aspect ratio) */}
+      {/* MODAL 1: PREVIEW CLIP MODAL */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-5">
@@ -644,7 +742,6 @@ export default function App() {
               </button>
             </div>
             
-            {/* The cropped container using object-cover to match AI shorts layout */}
             <div className={`relative bg-black rounded-xl overflow-hidden flex items-center justify-center mx-auto w-full ${getRatioContainerClass(ratio)} shadow-inner border border-gray-800`}>
               <video 
                 ref={previewVideoRef}
@@ -664,7 +761,8 @@ export default function App() {
               <span className="text-[11px] text-gray-400 font-mono">Cropped to Selected Ratio ({ratio})</span>
               <button 
                 onClick={() => handleDownloadClip(previewClip)}
-                className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-purple-600/20"
+                disabled={isProcessingDownload}
+                className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-purple-600/20 disabled:opacity-50"
               >
                 <Download size={14} /> Download Short ({ratio})
               </button>
