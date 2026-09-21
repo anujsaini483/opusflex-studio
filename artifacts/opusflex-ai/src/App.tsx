@@ -221,17 +221,17 @@ export default function App() {
     }, 300);
   };
 
-  // TRUE BROWSER VIDEO/AUDIO TRIMMING & STABLE FACE FOCUS WITH EXACT SELECTED RATIO & NO BACKGROUND AUDIO LEAKAGE
+  // CORRECTED EXPORT LOGIC: CAPTURES STRICTLY FROM CANVAS (EXACT RATIO & FACE FOCUS) + ORIGINAL AUDIO
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadingClipIds.includes(clip.id)) return;
     setDownloadingClipIds((prev) => [...prev, clip.id]);
-    setToast(`⏳ ${ratio} रेश्यो और साइलेंट बैकग्राउंड प्रोसेसिंग के साथ क्लिप तैयार हो रही है...`);
+    setToast(`⏳ ${ratio} रेश्यो, स्टेबल फोकस और ऑडियो के साथ क्लिप तैयार हो रही है...`);
 
     try {
       const vid = document.createElement('video');
       vid.src = videoUrl;
       vid.crossOrigin = 'anonymous';
-      vid.muted = true; // Muted so background audio doesn't play out loud to speakers
+      vid.muted = false; // Need audio unmuted briefly to capture audio stream tracks
       vid.playsInline = true;
 
       await new Promise((resolve, reject) => {
@@ -249,7 +249,7 @@ export default function App() {
 
       // EXACT TARGET RESOLUTION STRICTLY BASED ON SELECTED RATIO
       let targetW = 1080;
-      let targetH = 1920; // 9:16 Vertical (Shorts/Reels)
+      let targetH = 1920; // 9:16 Vertical
       if (ratio === '16:9') { targetW = 1920; targetH = 1080; }
       else if (ratio === '1:1') { targetW = 1080; targetH = 1080; }
       else if (ratio === '4:5') { targetW = 1080; targetH = 1350; }
@@ -262,23 +262,32 @@ export default function App() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context failed');
 
-      let stream: MediaStream;
+      // 1. Capture Video Stream strictly from Canvas (Ensures exact chosen ratio & face focus)
+      const canvasStream = canvas.captureStream(30);
+
+      // 2. Capture Audio Stream from original video element
+      let audioStream: MediaStream | null = null;
       if (typeof (vid as any).captureStream === 'function') {
-        stream = (vid as any).captureStream();
+        audioStream = (vid as any).captureStream();
       } else if (typeof (vid as any).mozCaptureStream === 'function') {
-        stream = (vid as any).mozCaptureStream();
-      } else {
-        stream = canvas.captureStream(30);
+        audioStream = (vid as any).mozCaptureStream();
+      }
+
+      // Combine Canvas Video Track + Original Audio Track into a single final stream
+      const finalStream = new MediaStream();
+      canvasStream.getVideoTracks().forEach((track) => finalStream.addTrack(track));
+      if (audioStream) {
+        audioStream.getAudioTracks().forEach((track) => finalStream.addTrack(track));
       }
 
       let recorder: MediaRecorder;
       try {
-        recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 8000000 });
+        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 8000000 });
       } catch {
         try {
-          recorder = new MediaRecorder(stream, { mimeType: 'video/webm', videoBitsPerSecond: 8000000 });
+          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 8000000 });
         } catch {
-          recorder = new MediaRecorder(stream);
+          recorder = new MediaRecorder(finalStream);
         }
       }
 
@@ -321,6 +330,7 @@ export default function App() {
         let sX = 0, sY = 0, sW = vW, sH = vH;
         if (videoAspect > targetAspect) {
           sW = vH * targetAspect;
+          // Stable Centered Face Focus matching UI preview
           sX = (vW - sW) / 2;
         } else {
           sH = vW / targetAspect;
