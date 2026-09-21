@@ -171,7 +171,7 @@ export default function App() {
   const handleGenerateClips = () => {
     setGenerating(true);
     setProgress(0);
-    setToast('AI वीडियो को स्कैन कर रहा है और चुने हुए रेश्यो के अनुसार क्लिप्स बना रहा है...');
+    setToast(`AI वीडियो को स्कैन कर रहा है और ${ratio} रेश्यो के अनुसार क्लिप्स बना रहा है...`);
 
     let p = 0;
     const interval = window.setInterval(() => {
@@ -221,11 +221,11 @@ export default function App() {
     }, 300);
   };
 
-  // TRUE BROWSER VIDEO/AUDIO TRIMMING & STABLE FACE FOCUS WITH CORRECT RATIO & NO LAG
+  // TRUE BROWSER VIDEO/AUDIO TRIMMING & STABLE FACE FOCUS WITH SELECTED RATIO & HIGH BITRATE (NO LAG)
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadingClipIds.includes(clip.id)) return;
     setDownloadingClipIds((prev) => [...prev, clip.id]);
-    setToast(`⏳ ${ratio} रेश्यो और वॉइस ऑडियो के साथ क्लिप प्रोसेस हो रही है...`);
+    setToast(`⏳ ${ratio} रेश्यो, हाई क्वालिटी और वॉइस ऑडियो के साथ क्लिप प्रोसेस हो रही है...`);
 
     try {
       const vid = document.createElement('video');
@@ -246,13 +246,14 @@ export default function App() {
         vid.onseeked = () => resolve(true);
       });
 
-      // Target Dimensions strictly according to selected ratio
+      // Strict Target Resolution based on user's selected Ratio selection
       let targetW = 720;
-      let targetH = 1280; // 9:16
+      let targetH = 1280; // 9:16 Vertical
       if (ratio === '16:9') { targetW = 1280; targetH = 720; }
       else if (ratio === '1:1') { targetW = 1080; targetH = 1080; }
       else if (ratio === '4:5') { targetW = 864; targetH = 1080; }
       else if (ratio === '3:4') { targetW = 810; targetH = 1080; }
+      else if (ratio === 'more') { targetW = 1080; targetH = 1920; }
 
       const canvas = document.createElement('canvas');
       canvas.width = targetW;
@@ -271,10 +272,11 @@ export default function App() {
 
       let recorder: MediaRecorder;
       try {
-        recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 5000000 });
+        // High Bitrate (8 Mbps) to prevent pixelation, lag, and stutters
+        recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 8000000 });
       } catch {
         try {
-          recorder = new MediaRecorder(stream, { mimeType: 'video/webm', videoBitsPerSecond: 5000000 });
+          recorder = new MediaRecorder(stream, { mimeType: 'video/webm', videoBitsPerSecond: 8000000 });
         } catch {
           recorder = new MediaRecorder(stream);
         }
@@ -295,7 +297,7 @@ export default function App() {
         a.click();
         a.remove();
         setDownloadingClipIds((prev) => prev.filter((id) => id !== clip.id));
-        setToast('📥 क्लिप सफलतापूर्व डाउनलोड हो गई!');
+        setToast(`📥 ${ratio} रेश्यो की क्लिप सफलतापूर्वक डाउनलोड हो गई!`);
       };
 
       recorder.start();
