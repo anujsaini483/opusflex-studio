@@ -221,17 +221,18 @@ export default function App() {
     }, 300);
   };
 
-  // TRUE BROWSER VIDEO/AUDIO TRIMMING & STABLE FACE FOCUS WITH SELECTED RATIO & HIGH BITRATE (NO LAG)
+  // TRUE BROWSER VIDEO/AUDIO TRIMMING & STABLE FACE FOCUS WITH EXACT SELECTED RATIO & NO BACKGROUND AUDIO LEAKAGE
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadingClipIds.includes(clip.id)) return;
     setDownloadingClipIds((prev) => [...prev, clip.id]);
-    setToast(`⏳ ${ratio} रेश्यो, हाई क्वालिटी और वॉइस ऑडियो के साथ क्लिप प्रोसेस हो रही है...`);
+    setToast(`⏳ ${ratio} रेश्यो और साइलेंट बैकग्राउंड प्रोसेसिंग के साथ क्लिप तैयार हो रही है...`);
 
     try {
       const vid = document.createElement('video');
       vid.src = videoUrl;
       vid.crossOrigin = 'anonymous';
-      vid.muted = false;
+      vid.muted = true; // Muted so background audio doesn't play out loud to speakers
+      vid.playsInline = true;
 
       await new Promise((resolve, reject) => {
         vid.onloadedmetadata = () => resolve(true);
@@ -246,13 +247,13 @@ export default function App() {
         vid.onseeked = () => resolve(true);
       });
 
-      // Strict Target Resolution based on user's selected Ratio selection
-      let targetW = 720;
-      let targetH = 1280; // 9:16 Vertical
-      if (ratio === '16:9') { targetW = 1280; targetH = 720; }
+      // EXACT TARGET RESOLUTION STRICTLY BASED ON SELECTED RATIO
+      let targetW = 1080;
+      let targetH = 1920; // 9:16 Vertical (Shorts/Reels)
+      if (ratio === '16:9') { targetW = 1920; targetH = 1080; }
       else if (ratio === '1:1') { targetW = 1080; targetH = 1080; }
-      else if (ratio === '4:5') { targetW = 864; targetH = 1080; }
-      else if (ratio === '3:4') { targetW = 810; targetH = 1080; }
+      else if (ratio === '4:5') { targetW = 1080; targetH = 1350; }
+      else if (ratio === '3:4') { targetW = 1080; targetH = 1440; }
       else if (ratio === 'more') { targetW = 1080; targetH = 1920; }
 
       const canvas = document.createElement('canvas');
@@ -272,7 +273,6 @@ export default function App() {
 
       let recorder: MediaRecorder;
       try {
-        // High Bitrate (8 Mbps) to prevent pixelation, lag, and stutters
         recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 8000000 });
       } catch {
         try {
@@ -321,7 +321,6 @@ export default function App() {
         let sX = 0, sY = 0, sW = vW, sH = vH;
         if (videoAspect > targetAspect) {
           sW = vH * targetAspect;
-          // Stable Centered Face Focus without jitter/shaking
           sX = (vW - sW) / 2;
         } else {
           sH = vW / targetAspect;
