@@ -77,7 +77,6 @@ export default function App() {
   const [newTitleInput, setNewTitleInput] = useState('');
   const [activeMenuClipId, setActiveMenuClipId] = useState<number | null>(null);
   
-  // Independent Per-Clip Downloading Tracker IDs
   const [downloadingClipIds, setDownloadingClipIds] = useState<number[]>([]);
 
   useEffect(() => {
@@ -103,7 +102,6 @@ export default function App() {
     };
   }, [videoUrl]);
 
-  // Strict Preview Time Enforcement
   useEffect(() => {
     const pVideo = previewVideoRef.current;
     if (!pVideo || !previewClip) return;
@@ -221,17 +219,17 @@ export default function App() {
     }, 300);
   };
 
-  // CORRECTED EXPORT LOGIC: CAPTURES STRICTLY FROM CANVAS (EXACT RATIO & FACE FOCUS) + ORIGINAL AUDIO
+  // FULLY OPTIMIZED SILENT PROCESSING & HIGH QUALITY SMOOTH RECORDING LOGIC
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadingClipIds.includes(clip.id)) return;
     setDownloadingClipIds((prev) => [...prev, clip.id]);
-    setToast(`⏳ ${ratio} रेश्यो, स्टेबल फोकस और ऑडियो के साथ क्लिप तैयार हो रही है...`);
+    setToast(`⏳ ${ratio} रेश्यो, सुपर स्मूथ क्वालिटी और साइलेंट प्रोसेसिंग जारी है...`);
 
     try {
       const vid = document.createElement('video');
       vid.src = videoUrl;
       vid.crossOrigin = 'anonymous';
-      vid.muted = false; // Need audio unmuted briefly to capture audio stream tracks
+      vid.muted = false; 
       vid.playsInline = true;
 
       await new Promise((resolve, reject) => {
@@ -247,7 +245,6 @@ export default function App() {
         vid.onseeked = () => resolve(true);
       });
 
-      // EXACT TARGET RESOLUTION STRICTLY BASED ON SELECTED RATIO
       let targetW = 1080;
       let targetH = 1920; // 9:16 Vertical
       if (ratio === '16:9') { targetW = 1920; targetH = 1080; }
@@ -262,30 +259,27 @@ export default function App() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context failed');
 
-      // 1. Capture Video Stream strictly from Canvas (Ensures exact chosen ratio & face focus)
+      // 1. Capture Smooth Canvas Video Stream at 30 FPS
       const canvasStream = canvas.captureStream(30);
 
-      // 2. Capture Audio Stream from original video element
-      let audioStream: MediaStream | null = null;
-      if (typeof (vid as any).captureStream === 'function') {
-        audioStream = (vid as any).captureStream();
-      } else if (typeof (vid as any).mozCaptureStream === 'function') {
-        audioStream = (vid as any).mozCaptureStream();
-      }
+      // 2. Web Audio API setup to capture audio completely SILENT on speakers (no audio leakage)
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const sourceNode = audioCtx.createMediaElementSource(vid);
+      const destinationNode = audioCtx.createMediaStreamDestination();
+      sourceNode.connect(destinationNode);
+      // NOTE: We purposely do NOT connect sourceNode to audioCtx.destination, so speakers remain 100% silent!
 
-      // Combine Canvas Video Track + Original Audio Track into a single final stream
       const finalStream = new MediaStream();
       canvasStream.getVideoTracks().forEach((track) => finalStream.addTrack(track));
-      if (audioStream) {
-        audioStream.getAudioTracks().forEach((track) => finalStream.addTrack(track));
-      }
+      destinationNode.stream.getAudioTracks().forEach((track) => finalStream.addTrack(track));
 
       let recorder: MediaRecorder;
       try {
-        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 8000000 });
+        // High Bitrate (10 Mbps) for ultra-smooth lag-free playback without pixelation
+        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 10000000 });
       } catch {
         try {
-          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 8000000 });
+          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 10000000 });
         } catch {
           recorder = new MediaRecorder(finalStream);
         }
@@ -297,6 +291,9 @@ export default function App() {
       };
 
       recorder.onstop = () => {
+        if (audioCtx.state !== 'closed') {
+          audioCtx.close().catch(() => {});
+        }
         const blob = new Blob(chunks, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -306,7 +303,7 @@ export default function App() {
         a.click();
         a.remove();
         setDownloadingClipIds((prev) => prev.filter((id) => id !== clip.id));
-        setToast(`📥 ${ratio} रेश्यो की क्लिप सफलतापूर्वक डाउनलोड हो गई!`);
+        setToast(`📥 ${ratio} रेश्यो की स्मूथ क्लिप सफलतापूर्वक डाउनलोड हो गई!`);
       };
 
       recorder.start();
@@ -330,7 +327,6 @@ export default function App() {
         let sX = 0, sY = 0, sW = vW, sH = vH;
         if (videoAspect > targetAspect) {
           sW = vH * targetAspect;
-          // Stable Centered Face Focus matching UI preview
           sX = (vW - sW) / 2;
         } else {
           sH = vW / targetAspect;
