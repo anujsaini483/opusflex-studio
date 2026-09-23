@@ -77,7 +77,6 @@ export default function App() {
   const [newTitleInput, setNewTitleInput] = useState('');
   const [activeMenuClipId, setActiveMenuClipId] = useState<number | null>(null);
   
-  // Track download progress per clip ID (0 to 100)
   const [downloadProgressMap, setDownloadProgressMap] = useState<{ [id: number]: number }>({});
 
   useEffect(() => {
@@ -167,7 +166,6 @@ export default function App() {
     }
   };
 
-  // Helper to generate dynamic thumbnail frame for each clip
   const generateClipThumbnail = async (vidElement: HTMLVideoElement, startTime: number): Promise<string> => {
     return new Promise((resolve) => {
       const thumbCanvas = document.createElement('canvas');
@@ -256,11 +254,11 @@ export default function App() {
     }, 300);
   };
 
-  // CRASH-FREE, SMOOTH & OPTIMIZED EXPORT WITH LIVE PROGRESS PERCENTAGE
+  // FULLY OPTIMIZED LAG-FREE & SMOOTH PLAYBACK EXPORT LOGIC
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadProgressMap[clip.id] !== undefined) return;
     setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: 0 }));
-    setToast(`⏳ ${ratio} रेश्यो और एचडी क्वालिटी के साथ क्लिप प्रोसेस हो रही है...`);
+    setToast(`⏳ ${ratio} रेश्यो और स्मूथ एचडी क्वालिटी के साथ क्लिप प्रोसेस हो रही है...`);
 
     try {
       const vid = document.createElement('video');
@@ -297,7 +295,7 @@ export default function App() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context failed');
 
-      const canvasStream = canvas.captureStream(30);
+      const canvasStream = canvas.captureStream(24); // 24 FPS for buttery smooth mobile compatibility and zero lag
 
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const sourceNode = audioCtx.createMediaElementSource(vid);
@@ -310,10 +308,11 @@ export default function App() {
 
       let recorder: MediaRecorder;
       try {
-        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 10000000 });
+        // Optimized 8 Mbps Bitrate for flawless playback without stuttering or crashing
+        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp8,opus', videoBitsPerSecond: 8000000 });
       } catch {
         try {
-          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 10000000 });
+          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 8000000 });
         } catch {
           recorder = new MediaRecorder(finalStream);
         }
@@ -342,7 +341,7 @@ export default function App() {
           delete copy[clip.id];
           return copy;
         });
-        setToast(`📥 ${ratio} रेश्यो की क्लिप सफलतापूर्वक डाउनलोड हो गई!`);
+        setToast(`📥 ${ratio} रेश्यो की सुपर स्मूथ क्लिप डाउनलोड हो गई!`);
       };
 
       recorder.start();
@@ -358,7 +357,6 @@ export default function App() {
           return;
         }
 
-        // Update live progress percentage
         const elapsed = vid.currentTime - startTime;
         const currentPct = Math.min(99, Math.round((elapsed / clipDuration) * 100));
         setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: currentPct }));
