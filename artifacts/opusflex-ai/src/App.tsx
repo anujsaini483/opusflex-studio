@@ -63,8 +63,8 @@ export default function App() {
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
   const [subtitleLang, setSubtitleLang] = useState('Hindi');
   
-  const [clipCount, setClipCount] = useState<number>(4);
-  const [customClipCountInput, setCustomClipCountInput] = useState('4');
+  const [clipCount, setClipCount] = useState<number>(3);
+  const [customClipCountInput, setCustomClipCountInput] = useState('3');
   const [showClipCountModal, setShowClipCountModal] = useState(false);
 
   const [generating, setGenerating] = useState(false);
@@ -77,7 +77,8 @@ export default function App() {
   const [newTitleInput, setNewTitleInput] = useState('');
   const [activeMenuClipId, setActiveMenuClipId] = useState<number | null>(null);
   
-  const [downloadingClipIds, setDownloadingClipIds] = useState<number[]>([]);
+  // Track download progress per clip ID (0 to 100)
+  const [downloadProgressMap, setDownloadProgressMap] = useState<{ [id: number]: number }>({});
 
   useEffect(() => {
     if (!toast) return;
@@ -157,22 +158,47 @@ export default function App() {
 
   const getRatioContainerClass = (r: RatioType) => {
     switch (r) {
-      case '9:16': return 'aspect-[9/16] max-h-[480px] max-w-[270px]';
-      case '16:9': return 'aspect-[16/9] max-w-[500px]';
-      case '1:1': return 'aspect-square max-h-[400px] max-w-[400px]';
-      case '4:5': return 'aspect-[4/5] max-h-[440px] max-w-[350px]';
-      case '3:4': return 'aspect-[3/4] max-h-[440px] max-w-[330px]';
-      default: return 'aspect-[9/16] max-h-[480px] max-w-[270px]';
+      case '9:16': return 'aspect-[9/16] max-h-[160px] max-w-[90px]';
+      case '16:9': return 'aspect-[16/9] max-w-[160px]';
+      case '1:1': return 'aspect-square max-h-[120px] max-w-[120px]';
+      case '4:5': return 'aspect-[4/5] max-h-[140px] max-w-[110px]';
+      case '3:4': return 'aspect-[3/4] max-h-[140px] max-w-[105px]';
+      default: return 'aspect-[9/16] max-h-[160px] max-w-[90px]';
     }
   };
 
-  const handleGenerateClips = () => {
+  // Helper to generate dynamic thumbnail frame for each clip
+  const generateClipThumbnail = async (vidElement: HTMLVideoElement, startTime: number): Promise<string> => {
+    return new Promise((resolve) => {
+      const thumbCanvas = document.createElement('canvas');
+      thumbCanvas.width = 160;
+      thumbCanvas.height = 284;
+      const tCtx = thumbCanvas.getContext('2d');
+      
+      const originalTime = vidElement.currentTime;
+      vidElement.currentTime = startTime;
+
+      const onSeeked = () => {
+        vidElement.removeEventListener('seeked', onSeeked);
+        if (tCtx) {
+          tCtx.drawImage(vidElement, 0, 0, thumbCanvas.width, thumbCanvas.height);
+        }
+        const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.7);
+        vidElement.currentTime = originalTime;
+        resolve(dataUrl);
+      };
+
+      vidElement.addEventListener('seeked', onSeeked);
+    });
+  };
+
+  const handleGenerateClips = async () => {
     setGenerating(true);
     setProgress(0);
     setToast(`AI वीडियो को स्कैन कर रहा है और ${ratio} रेश्यो के अनुसार क्लिप्स बना रहा है...`);
 
     let p = 0;
-    const interval = window.setInterval(() => {
+    const interval = window.setInterval(async () => {
       p += 25;
       setProgress(p);
       if (p >= 100) {
@@ -197,33 +223,44 @@ export default function App() {
           '🚀 Dynamic Conversation Climax'
         ];
 
-        const dynamicClips: GeneratedClip[] = Array.from({ length: clipCount }, (_, i) => {
+        const tempVid = videoRef.current;
+
+        const dynamicClips: GeneratedClip[] = [];
+        for (let i = 0; i < clipCount; i++) {
           const start = Math.min(i * (totalDur / (clipCount + 0.2)), Math.max(0, totalDur - segLen));
           const end = Math.min(start + segLen, totalDur);
-          return {
+          
+          let thumb = 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&auto=format&fit=crop&q=60';
+          if (tempVid) {
+            try {
+              thumb = await generateClipThumbnail(tempVid, start);
+            } catch {}
+          }
+
+          dynamicClips.push({
             id: Date.now() + i,
             number: i + 1,
             title: hookTitles[i % hookTitles.length],
             timeRange: `${formatTime(start)} – ${formatTime(end)}`,
             duration: `${Math.round(end - start)}s`,
-            thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&auto=format&fit=crop&q=60',
+            thumbnail: thumb,
             videoUrl: videoUrl,
             startTime: start,
             endTime: end
-          };
-        });
+          });
+        }
 
         setClips(dynamicClips);
-        setToast(`✨ ${clipCount} क्लिप्स (${ratio} रेश्यो और स्टेबल फोकस के साथ) तैयार हैं!`);
+        setToast(`✨ ${clipCount} क्लिप्स (${ratio} रेश्यो और लाइव थंबनेल के साथ) तैयार हैं!`);
       }
     }, 300);
   };
 
-  // ULTIMATE SMOOTH, HIGH-QUALITY & SILENT PROCESSING LOGIC
+  // CRASH-FREE, SMOOTH & OPTIMIZED EXPORT WITH LIVE PROGRESS PERCENTAGE
   const handleDownloadClip = async (clip: GeneratedClip) => {
-    if (downloadingClipIds.includes(clip.id)) return;
-    setDownloadingClipIds((prev) => [...prev, clip.id]);
-    setToast(`⏳ ${ratio} रेश्यो, 12Mbps एचडी क्वालिटी और साइलेंट प्रोसेसिंग जारी है...`);
+    if (downloadProgressMap[clip.id] !== undefined) return;
+    setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: 0 }));
+    setToast(`⏳ ${ratio} रेश्यो और एचडी क्वालिटी के साथ क्लिप प्रोसेस हो रही है...`);
 
     try {
       const vid = document.createElement('video');
@@ -239,6 +276,7 @@ export default function App() {
 
       const startTime = clip.startTime || 0;
       const endTime = clip.endTime || (startTime + 15);
+      const clipDuration = endTime - startTime;
       vid.currentTime = startTime;
 
       await new Promise((resolve) => {
@@ -259,15 +297,12 @@ export default function App() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context failed');
 
-      // 1. Capture Smooth Canvas Video Stream at 30 FPS
       const canvasStream = canvas.captureStream(30);
 
-      // 2. Web Audio API setup to capture audio completely SILENT on speakers (no audio leakage)
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const sourceNode = audioCtx.createMediaElementSource(vid);
       const destinationNode = audioCtx.createMediaStreamDestination();
       sourceNode.connect(destinationNode);
-      // NOTE: We purposely do NOT connect sourceNode to audioCtx.destination, so speakers remain 100% silent!
 
       const finalStream = new MediaStream();
       canvasStream.getVideoTracks().forEach((track) => finalStream.addTrack(track));
@@ -275,11 +310,10 @@ export default function App() {
 
       let recorder: MediaRecorder;
       try {
-        // Ultra High Bitrate (12 Mbps) for buttery smooth lag-free crystal clear playback
-        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 12000000 });
+        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 10000000 });
       } catch {
         try {
-          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 12000000 });
+          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 10000000 });
         } catch {
           recorder = new MediaRecorder(finalStream);
         }
@@ -302,8 +336,13 @@ export default function App() {
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setDownloadingClipIds((prev) => prev.filter((id) => id !== clip.id));
-        setToast(`📥 ${ratio} रेश्यो की सुपर स्मूथ एचडी क्लिप डाउनलोड हो गई!`);
+
+        setDownloadProgressMap((prev) => {
+          const copy = { ...prev };
+          delete copy[clip.id];
+          return copy;
+        });
+        setToast(`📥 ${ratio} रेश्यो की क्लिप सफलतापूर्वक डाउनलोड हो गई!`);
       };
 
       recorder.start();
@@ -318,6 +357,11 @@ export default function App() {
           }
           return;
         }
+
+        // Update live progress percentage
+        const elapsed = vid.currentTime - startTime;
+        const currentPct = Math.min(99, Math.round((elapsed / clipDuration) * 100));
+        setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: currentPct }));
 
         const vW = vid.videoWidth;
         const vH = vid.videoHeight;
@@ -343,7 +387,11 @@ export default function App() {
 
     } catch (err) {
       console.error(err);
-      setDownloadingClipIds((prev) => prev.filter((id) => id !== clip.id));
+      setDownloadProgressMap((prev) => {
+        const copy = { ...prev };
+        delete copy[clip.id];
+        return copy;
+      });
       setToast('❌ डाउनलोड प्रक्रिया में त्रुटि आई।');
     }
   };
@@ -670,15 +718,16 @@ export default function App() {
 
           <div className="space-y-3">
             {clips.map((clip) => {
-              const isDownloadingThis = downloadingClipIds.includes(clip.id);
+              const currentProgress = downloadProgressMap[clip.id];
+              const isDownloadingThis = currentProgress !== undefined;
 
               return (
                 <div key={clip.id} className="relative flex items-center justify-between p-3 rounded-xl border border-gray-800/80 bg-[#07090e] hover:border-gray-700 transition">
                   <div className="flex items-center space-x-3.5">
-                    <div className={`relative w-12 ${getRatioContainerClass(ratio)} rounded-lg overflow-hidden bg-black flex items-center justify-center shadow`}>
-                      <img src={clip.thumbnail} alt={clip.title} className="w-full h-full object-cover opacity-80" />
-                      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white bg-black/40 font-mono">
-                        {clip.number}
+                    <div className={`relative overflow-hidden bg-black rounded-lg flex items-center justify-center shadow ${getRatioContainerClass(ratio)}`}>
+                      <img src={clip.thumbnail} alt={clip.title} className="w-full h-full object-cover" />
+                      <span className="absolute bottom-1 right-1 px-1.5 py-0.5 text-[9px] font-bold text-white bg-black/70 rounded font-mono">
+                        #{clip.number}
                       </span>
                     </div>
                     <div>
@@ -699,10 +748,11 @@ export default function App() {
                     <button 
                       onClick={() => handleDownloadClip(clip)}
                       disabled={isDownloadingThis}
-                      className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer disabled:opacity-50"
+                      className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer disabled:opacity-80 flex items-center gap-1.5 text-xs font-mono"
                       title="Download Cropped & Trimmed Clip"
                     >
-                      <Download size={15} className={isDownloadingThis ? 'animate-bounce text-purple-400' : ''} />
+                      <Download size={14} className={isDownloadingThis ? 'text-purple-400 animate-pulse' : ''} />
+                      <span>{isDownloadingThis ? `${currentProgress}%` : 'Download'}</span>
                     </button>
 
                     <div className="relative">
@@ -768,8 +818,8 @@ export default function App() {
               <span className="text-[11px] text-gray-400 font-mono">Audio & Stable Face Focus ({ratio})</span>
               <button 
                 onClick={() => handleDownloadClip(previewClip)}
-                disabled={downloadingClipIds.includes(previewClip.id)}
-                className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-purple-600/20 disabled:opacity-50"
+                disabled={downloadProgressMap[previewClip.id] !== undefined}
+                className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-purple-600/25 disabled:opacity-50"
               >
                 <Download size={14} /> Download Short ({ratio})
               </button>
