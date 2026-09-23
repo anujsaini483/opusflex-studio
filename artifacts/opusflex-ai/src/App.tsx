@@ -219,11 +219,11 @@ export default function App() {
     }, 300);
   };
 
-  // FULLY OPTIMIZED SILENT PROCESSING & HIGH QUALITY SMOOTH RECORDING LOGIC
+  // ULTIMATE SMOOTH, HIGH-QUALITY & SILENT PROCESSING LOGIC
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadingClipIds.includes(clip.id)) return;
     setDownloadingClipIds((prev) => [...prev, clip.id]);
-    setToast(`⏳ ${ratio} रेश्यो, सुपर स्मूथ क्वालिटी और साइलेंट प्रोसेसिंग जारी है...`);
+    setToast(`⏳ ${ratio} रेश्यो, 12Mbps एचडी क्वालिटी और साइलेंट प्रोसेसिंग जारी है...`);
 
     try {
       const vid = document.createElement('video');
@@ -275,11 +275,11 @@ export default function App() {
 
       let recorder: MediaRecorder;
       try {
-        // High Bitrate (10 Mbps) for ultra-smooth lag-free playback without pixelation
-        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 10000000 });
+        // Ultra High Bitrate (12 Mbps) for buttery smooth lag-free crystal clear playback
+        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp9,opus', videoBitsPerSecond: 12000000 });
       } catch {
         try {
-          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 10000000 });
+          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 12000000 });
         } catch {
           recorder = new MediaRecorder(finalStream);
         }
@@ -303,7 +303,7 @@ export default function App() {
         a.click();
         a.remove();
         setDownloadingClipIds((prev) => prev.filter((id) => id !== clip.id));
-        setToast(`📥 ${ratio} रेश्यो की स्मूथ क्लिप सफलतापूर्वक डाउनलोड हो गई!`);
+        setToast(`📥 ${ratio} रेश्यो की सुपर स्मूथ एचडी क्लिप डाउनलोड हो गई!`);
       };
 
       recorder.start();
