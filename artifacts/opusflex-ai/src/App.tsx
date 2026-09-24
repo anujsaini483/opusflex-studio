@@ -247,11 +247,11 @@ export default function App() {
     }, 300);
   };
 
-  // PRODUCTION-OPTIMIZED LAG-FREE EXPORT LOGIC
+  // PRODUCTION-OPTIMIZED CONSTANT 30 FPS EXPORT LOGIC (FIXES TIMELINE JUMP & LAG)
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadProgressMap[clip.id] !== undefined) return;
     setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: 0 }));
-    setToast(`⏳ ${ratio} रेश्यो और स्मूथ एचडी क्वालिटी के साथ क्लिप प्रोसेस हो रही है...`);
+    setToast(`⏳ ${ratio} रेश्यो और स्टेबल टाइमलाइन के साथ क्लिप प्रोसेस हो रही है...`);
 
     let audioCtx: AudioContext | null = null;
     let vid: HTMLVideoElement | null = null;
@@ -317,7 +317,7 @@ export default function App() {
 
       mediaRecorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 4500000 // Optimized 4.5 Mbps
+        videoBitsPerSecond: 4000000 // Optimized 4 Mbps
       });
 
       const chunks: Blob[] = [];
@@ -352,7 +352,7 @@ export default function App() {
           delete copy[clip.id];
           return copy;
         });
-        setToast(`📥 ${ratio} रेश्यो की स्मूथ एचडी क्लिप डाउनलोड हो गई!`);
+        setToast(`📥 ${ratio} रेश्यो की परफेक्ट स्मूथ क्लिप डाउनलोड हो गई!`);
       };
 
       mediaRecorder.start(250);
@@ -360,7 +360,10 @@ export default function App() {
       vid.play().catch(() => {});
 
       let animationFrameId: number;
-      const renderLoop = () => {
+      let lastTime = performance.now();
+      const fpsInterval = 1000 / 30;
+
+      const renderLoop = (now: DOMHighResTimeStamp) => {
         if (!vid || vid.ended || vid.currentTime >= endTime || !mediaRecorder || mediaRecorder.state !== 'recording') {
           if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
@@ -370,27 +373,32 @@ export default function App() {
           return;
         }
 
-        const elapsed = vid.currentTime - startTime;
-        const currentPct = Math.min(99, Math.round((elapsed / clipDuration) * 100));
-        setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: currentPct }));
+        const elapsed = now - lastTime;
+        if (elapsed >= fpsInterval) {
+          lastTime = now - (elapsed % fpsInterval);
 
-        const vW = vid.videoWidth;
-        const vH = vid.videoHeight;
-        if (vW > 0 && vH > 0) {
-          const targetAspect = targetW / targetH;
-          const videoAspect = vW / vH;
+          const currentElapsed = vid.currentTime - startTime;
+          const currentPct = Math.min(99, Math.round((currentElapsed / clipDuration) * 100));
+          setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: currentPct }));
 
-          let sX = 0, sY = 0, sW = vW, sH = vH;
-          if (videoAspect > targetAspect) {
-            sW = vH * targetAspect;
-            sX = (vW - sW) / 2;
-          } else {
-            sH = vW / targetAspect;
-            sY = Math.max(0, (vH - sH) * 0.2);
+          const vW = vid.videoWidth;
+          const vH = vid.videoHeight;
+          if (vW > 0 && vH > 0) {
+            const targetAspect = targetW / targetH;
+            const videoAspect = vW / vH;
+
+            let sX = 0, sY = 0, sW = vW, sH = vH;
+            if (videoAspect > targetAspect) {
+              sW = vH * targetAspect;
+              sX = (vW - sW) / 2;
+            } else {
+              sH = vW / targetAspect;
+              sY = Math.max(0, (vH - sH) * 0.2);
+            }
+
+            ctx.clearRect(0, 0, targetW, targetH);
+            ctx.drawImage(vid, sX, sY, sW, sH, 0, 0, targetW, targetH);
           }
-
-          ctx.clearRect(0, 0, targetW, targetH);
-          ctx.drawImage(vid, sX, sY, sW, sH, 0, 0, targetW, targetH);
         }
 
         animationFrameId = requestAnimationFrame(renderLoop);
@@ -724,7 +732,7 @@ export default function App() {
           )}
         </div>
 
-        {/* 5. GENERATED CLIPS LIST SECTION (ONLY SHOWS WHEN CLIPS EXIST) */}
+        {/* 5. GENERATED CLIPS LIST SECTION */}
         {clips.length > 0 && (
           <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
