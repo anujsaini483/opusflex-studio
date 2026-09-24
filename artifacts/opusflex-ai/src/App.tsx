@@ -25,6 +25,7 @@ interface GeneratedClip {
   title: string;
   timeRange: string;
   duration: string;
+  durationSec: number;
   thumbnail: string;
   videoUrl?: string;
   startTime?: number;
@@ -66,6 +67,9 @@ export default function App() {
   const [toast, setToast] = useState('');
 
   const [previewClip, setPreviewClip] = useState<GeneratedClip | null>(null);
+  const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
+  const [previewPlaying, setPreviewPlaying] = useState(true);
+
   const [renameClipTarget, setRenameClipTarget] = useState<GeneratedClip | null>(null);
   const [newTitleInput, setNewTitleInput] = useState('');
   const [activeMenuClipId, setActiveMenuClipId] = useState<number | null>(null);
@@ -95,16 +99,25 @@ export default function App() {
     };
   }, [videoUrl]);
 
+  // Preview Modal Video Synchronizer with Exact Second Tracking
   useEffect(() => {
     const pVideo = previewVideoRef.current;
     if (!pVideo || !previewClip) return;
 
-    pVideo.currentTime = previewClip.startTime || 0;
+    const start = previewClip.startTime || 0;
+    const end = previewClip.endTime || (start + 15);
+
+    pVideo.currentTime = start;
     pVideo.play().catch(() => {});
+    setPreviewPlaying(true);
+    setPreviewCurrentTime(0);
 
     const handleTimeCheck = () => {
-      if (previewClip.endTime !== undefined && pVideo.currentTime >= previewClip.endTime) {
-        pVideo.currentTime = previewClip.startTime || 0;
+      const elapsed = Math.max(0, pVideo.currentTime - start);
+      setPreviewCurrentTime(elapsed);
+
+      if (pVideo.currentTime >= end) {
+        pVideo.currentTime = start;
         pVideo.play().catch(() => {});
       }
     };
@@ -215,11 +228,12 @@ export default function App() {
         ];
 
         const tempVid = videoRef.current;
-
         const dynamicClips: GeneratedClip[] = [];
+
         for (let i = 0; i < clipCount; i++) {
           const start = Math.min(i * (totalDur / (clipCount + 0.2)), Math.max(0, totalDur - segLen));
           const end = Math.min(start + segLen, totalDur);
+          const exactSec = Math.round(end - start);
           
           let thumb = 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&auto=format&fit=crop&q=60';
           if (tempVid) {
@@ -233,7 +247,8 @@ export default function App() {
             number: i + 1,
             title: hookTitles[i % hookTitles.length],
             timeRange: `${formatTime(start)} – ${formatTime(end)}`,
-            duration: `${Math.round(end - start)}s`,
+            duration: `${exactSec}s`,
+            durationSec: exactSec,
             thumbnail: thumb,
             videoUrl: videoUrl,
             startTime: start,
@@ -242,16 +257,16 @@ export default function App() {
         }
 
         setClips(dynamicClips);
-        setToast(`✨ ${clipCount} क्लिप्स (${ratio} रेश्यो और एचडी थंबनेल के साथ) तैयार हैं!`);
+        setToast(`✨ ${clipCount} क्लिप्स (${ratio} रेश्यो और सही समय के साथ) तैयार हैं!`);
       }
     }, 300);
   };
 
-  // ULTRA SMOOTH 30 FPS EXPORT WITH 8 MBPS HIGH QUALITY BITRATE
+  // ULTRA SMOOTH EXPORT WITH EXACT DURATION & 8 MBPS HIGH QUALITY
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadProgressMap[clip.id] !== undefined) return;
     setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: 0 }));
-    setToast(`⏳ ${ratio} रेश्यो एचडी क्वालिटी में प्रोसेस हो रहा है...`);
+    setToast(`⏳ ${clip.duration} की एचडी क्लिप प्रोसेस हो रही है...`);
 
     let audioCtx: AudioContext | null = null;
     let vid: HTMLVideoElement | null = null;
@@ -280,7 +295,7 @@ export default function App() {
       });
 
       let targetW = 1080;
-      let targetH = 1920; // 9:16 Vertical
+      let targetH = 1920;
       if (ratio === '16:9') { targetW = 1920; targetH = 1080; }
       else if (ratio === '1:1') { targetW = 1080; targetH = 1080; }
       else if (ratio === '4:5') { targetW = 1080; targetH = 1350; }
@@ -293,7 +308,6 @@ export default function App() {
       const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
       if (!ctx) throw new Error('Canvas context failed');
 
-      // Maximum high-quality smoothing for crystal clear sharp video
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
@@ -321,7 +335,7 @@ export default function App() {
 
       mediaRecorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 8000000 // Boosted to 8 Mbps for pristine crystal clear HD quality & zero pixelation
+        videoBitsPerSecond: 8000000 // 8 Mbps High Quality & Zero Pixelation
       });
 
       const chunks: Blob[] = [];
@@ -335,7 +349,7 @@ export default function App() {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${ratio.replace(':', '_')}.webm`;
+          a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${clip.durationSec}s.webm`;
           document.body.appendChild(a);
           a.click();
           a.remove();
@@ -356,7 +370,7 @@ export default function App() {
           delete copy[clip.id];
           return copy;
         });
-        setToast(`📥 ${ratio} रेश्यो की एचडी क्लिप सफलतापूर्वक डाउनलोड हो गई!`);
+        setToast(`📥 ${clip.duration} की एचडी क्लिप सफलतापूर्व डाउनलोड हो गई!`);
       };
 
       mediaRecorder.start(250);
@@ -365,7 +379,7 @@ export default function App() {
 
       let animationFrameId: number;
       let lastTime = performance.now();
-      const fpsInterval = 1000 / 30; // Stable 30 FPS Lock
+      const fpsInterval = 1000 / 30;
 
       const renderLoop = (now: DOMHighResTimeStamp) => {
         if (!vid || vid.ended || vid.currentTime >= endTime || !mediaRecorder || mediaRecorder.state !== 'recording') {
@@ -443,10 +457,6 @@ export default function App() {
     setToast('✏️ क्लिप का नाम बदल दिया गया है!');
   };
 
-  const handlePreviewClip = (clip: GeneratedClip) => {
-    setPreviewClip(clip);
-  };
-
   return (
     <div className="min-h-screen bg-[#07090e] text-[#e2e8f0] font-sans antialiased selection:bg-purple-600 selection:text-white pb-16">
       
@@ -463,7 +473,7 @@ export default function App() {
               </div>
               <div>
                 <h1 className="text-sm font-bold text-white tracking-wide">ClipShort AI</h1>
-                <p className="text-[10px] text-gray-400 font-medium">Stable Face Focus & High Quality Ratio</p>
+                <p className="text-[10px] text-gray-400 font-medium">Stable Face Focus & Exact Timing</p>
               </div>
             </div>
           </div>
@@ -490,9 +500,9 @@ export default function App() {
           </div>
 
           <div className="px-5 py-3.5 space-y-2.5 bg-[#0d121f]">
-            <div className="flex items-center justify-between text-xs text-gray-400 font-mono">
-              <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
-              <button onClick={() => { setPlaying(!playing); playing ? videoRef.current?.pause() : videoRef.current?.play(); }} className="text-purple-400 hover:text-purple-300 cursor-pointer">
+            <div className="flex items-center justify-between text-xs text-gray-300 font-mono font-semibold">
+              <span className="text-purple-400">समय: {formatTime(currentTime)} / कुल: {formatTime(duration)}</span>
+              <button onClick={() => { setPlaying(!playing); playing ? videoRef.current?.pause() : videoRef.current?.play(); }} className="text-purple-400 hover:text-purple-300 cursor-pointer flex items-center gap-1">
                 {playing ? <Pause size={16} /> : <Play size={16} />}
               </button>
             </div>
@@ -508,7 +518,7 @@ export default function App() {
               }}
             >
               <div 
-                className="absolute top-0 left-0 h-full bg-[#ef4444] group-hover:bg-red-500 rounded-full transition-all" 
+                className="absolute top-0 left-0 h-full bg-purple-500 rounded-full transition-all" 
                 style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }} 
               />
             </div>
@@ -743,9 +753,6 @@ export default function App() {
               <h2 className="text-sm font-semibold text-gray-200">
                 Generated Clips ({clips.length}) - Format: {ratio}
               </h2>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-800 bg-[#07090e] text-xs text-gray-300 hover:border-purple-600 transition cursor-pointer">
-                <Eye size={14} /> Preview All
-              </button>
             </div>
 
             <div className="space-y-3">
@@ -759,32 +766,35 @@ export default function App() {
                       <div className={`relative overflow-hidden bg-black rounded-lg flex items-center justify-center shadow ${getRatioContainerClass(ratio)}`}>
                         <img src={clip.thumbnail} alt={clip.title} className="w-full h-full object-cover" />
                         <span className="absolute bottom-1 right-1 px-1.5 py-0.5 text-[9px] font-bold text-white bg-black/70 rounded font-mono">
-                          #{clip.number}
+                          {clip.duration}
                         </span>
                       </div>
                       <div>
                         <h3 className="text-xs font-semibold text-white">{clip.title}</h3>
-                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">{clip.timeRange} • <span className="text-purple-400">{ratio} Ratio</span></p>
+                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+                          ड्यूरेशन: <span className="text-purple-400 font-bold">{clip.duration}</span> ({clip.timeRange})
+                        </p>
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
                       <button 
-                        onClick={() => handlePreviewClip(clip)}
-                        className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer"
+                        onClick={() => setPreviewClip(clip)}
+                        className="p-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer flex items-center gap-1 text-xs"
                         title="Preview Clip"
                       >
                         <Eye size={15} />
+                        <span className="hidden sm:inline">चलाएं</span>
                       </button>
 
                       <button 
                         onClick={() => handleDownloadClip(clip)}
                         disabled={isDownloadingThis}
                         className="px-3 py-2 rounded-lg bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-gray-700 transition cursor-pointer disabled:opacity-80 flex items-center gap-1.5 text-xs font-mono"
-                        title="Download Cropped & Trimmed Clip"
+                        title="Download Exact Duration Clip"
                       >
                         <Download size={14} className={isDownloadingThis ? 'text-purple-400 animate-pulse' : ''} />
-                        <span>{isDownloadingThis ? `${currentProgress}%` : 'Download'}</span>
+                        <span>{isDownloadingThis ? `${currentProgress}%` : 'डाउनलोड'}</span>
                       </button>
 
                       <div className="relative">
@@ -802,13 +812,13 @@ export default function App() {
                               onClick={() => { setRenameClipTarget(clip); setNewTitleInput(clip.title); setActiveMenuClipId(null); }}
                               className="w-full px-3 py-2 text-left flex items-center gap-2 text-gray-200 hover:bg-purple-600/20 hover:text-purple-300 transition"
                             >
-                              <Edit3 size={13} /> Rename
+                              <Edit3 size={13} /> नाम बदलें
                             </button>
                             <button 
                               onClick={() => handleDeleteClip(clip.id)}
                               className="w-full px-3 py-2 text-left flex items-center gap-2 text-red-400 hover:bg-red-500/20 transition"
                             >
-                              <Trash2 size={13} /> Delete
+                              <Trash2 size={13} /> हटाएं
                             </button>
                           </div>
                         )}
@@ -823,14 +833,16 @@ export default function App() {
 
       </main>
 
-      {/* MODAL 1: PREVIEW CLIP MODAL */}
+      {/* MODAL 1: PREVIEW CLIP MODAL WITH EXACT TIMER */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-5">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-white truncate">{previewClip.title}</h3>
-                <p className="text-[11px] text-purple-400 font-mono">Segment: {previewClip.timeRange} | Format: {ratio}</p>
+                <p className="text-[11px] text-purple-400 font-mono">
+                  समय: {formatTime(previewCurrentTime)} / कुल: {previewClip.duration} ({ratio})
+                </p>
               </div>
               <button onClick={() => setPreviewClip(null)} className="text-gray-400 hover:text-white p-1 rounded-lg">
                 <X size={18} />
@@ -841,20 +853,50 @@ export default function App() {
               <video 
                 ref={previewVideoRef}
                 src={videoUrl} 
-                controls 
+                playsInline
                 autoPlay 
                 className="w-full h-full object-cover" 
               />
             </div>
 
+            {/* Custom Precise Progress Bar with Seconds Indicator */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[11px] text-gray-400 font-mono">
+                <span>बीत गए: {formatTime(previewCurrentTime)}</span>
+                <span className="text-purple-400 font-bold">कुल अवधि: {previewClip.duration}</span>
+              </div>
+              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-purple-500 transition-all duration-200" 
+                  style={{ width: `${Math.min(100, (previewCurrentTime / previewClip.durationSec) * 100)}%` }} 
+                />
+              </div>
+            </div>
+
             <div className="flex justify-between items-center pt-2">
-              <span className="text-[11px] text-gray-400 font-mono">Audio & Stable Face Focus ({ratio})</span>
+              <button 
+                onClick={() => {
+                  if (previewVideoRef.current) {
+                    if (previewPlaying) {
+                      previewVideoRef.current.pause();
+                      setPreviewPlaying(false);
+                    } else {
+                      previewVideoRef.current.play();
+                      setPreviewPlaying(true);
+                    }
+                  }
+                }}
+                className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer"
+              >
+                {previewPlaying ? <Pause size={14} /> : <Play size={14} />} {previewPlaying ? 'रोकें' : 'चलाएं'}
+              </button>
+
               <button 
                 onClick={() => handleDownloadClip(previewClip)}
                 disabled={downloadProgressMap[previewClip.id] !== undefined}
                 className="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 transition cursor-pointer shadow-lg shadow-purple-600/25 disabled:opacity-50"
               >
-                <Download size={14} /> Download Short ({ratio})
+                <Download size={14} /> डाउनलोड क्लिप ({previewClip.duration})
               </button>
             </div>
           </div>
@@ -866,7 +908,7 @@ export default function App() {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white">Rename Clip</h3>
+              <h3 className="text-sm font-bold text-white">क्लिप का नाम बदलें</h3>
               <button onClick={() => setRenameClipTarget(null)} className="text-gray-400 hover:text-white">
                 <X size={18} />
               </button>
@@ -875,12 +917,12 @@ export default function App() {
               type="text" 
               value={newTitleInput}
               onChange={(e) => setNewTitleInput(e.target.value)}
-              placeholder="Enter new clip title"
+              placeholder="नया नाम दर्ज करें"
               className="w-full bg-[#07090e] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-600"
             />
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setRenameClipTarget(null)} className="px-3.5 py-2 rounded-xl bg-gray-800 text-xs text-gray-300 hover:bg-gray-700">Cancel</button>
-              <button onClick={handleSaveRename} className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs text-white font-semibold">Save</button>
+              <button onClick={() => setRenameClipTarget(null)} className="px-3.5 py-2 rounded-xl bg-gray-800 text-xs text-gray-300 hover:bg-gray-700">रद्द करें</button>
+              <button onClick={handleSaveRename} className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs text-white font-semibold">सहेजें</button>
             </div>
           </div>
         </div>
@@ -891,13 +933,13 @@ export default function App() {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white">Customize Clip Length</h3>
+              <h3 className="text-sm font-bold text-white">कस्टम लंबाई सेट करें</h3>
               <button onClick={() => setShowLengthModal(false)} className="text-gray-400 hover:text-white">
                 <X size={18} />
               </button>
             </div>
             <div className="space-y-3 text-xs">
-              <label className="text-gray-300 block">Select duration: <span className="text-purple-400 font-bold font-mono text-sm">{customLengthSec} seconds</span> (1s - 120s)</label>
+              <label className="text-gray-300 block">अवधि चुनें: <span className="text-purple-400 font-bold font-mono text-sm">{customLengthSec} सेकंड</span> (1s - 120s)</label>
               <input 
                 type="range" 
                 min={1} 
@@ -906,13 +948,10 @@ export default function App() {
                 onChange={(e) => setCustomLengthSec(Number(e.target.value))}
                 className="w-full accent-purple-600 cursor-pointer"
               />
-              <div className="flex justify-end text-[10px] text-gray-500 font-mono">
-                <span>120s (2 min)</span>
-              </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowLengthModal(false)} className="px-3.5 py-2 rounded-xl bg-gray-800 text-xs text-gray-300">Cancel</button>
-              <button onClick={() => { setLengthPreset('custom'); setShowLengthModal(false); setToast(`Custom length set to ${customLengthSec}s`); }} className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs text-white font-semibold">Confirm Length</button>
+              <button onClick={() => setShowLengthModal(false)} className="px-3.5 py-2 rounded-xl bg-gray-800 text-xs text-gray-300">रद्द करें</button>
+              <button onClick={() => { setLengthPreset('custom'); setShowLengthModal(false); setToast(`लंबाई ${customLengthSec}s सेट हो गई है`); }} className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs text-white font-semibold">पुष्टि करें</button>
             </div>
           </div>
         </div>
@@ -923,26 +962,26 @@ export default function App() {
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white">Customize Number of Clips</h3>
+              <h3 className="text-sm font-bold text-white">क्लिप की संख्या चुनें</h3>
               <button onClick={() => setShowClipCountModal(false)} className="text-gray-400 hover:text-white">
                 <X size={18} />
               </button>
             </div>
             <div className="space-y-2.5 text-xs">
-              <label className="text-gray-300 block">Enter number of clips to generate:</label>
+              <label className="text-gray-300 block">क्लिप्स की संख्या दर्ज करें:</label>
               <input 
                 type="number" 
                 min={1} 
                 max={15} 
                 value={customClipCountInput}
                 onChange={(e) => setCustomClipCountInput(e.target.value)}
-                placeholder="Enter 1 to 15"
+                placeholder="1 से 15 तक दर्ज करें"
                 className="w-full bg-[#07090e] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-purple-600"
               />
-              <p className="text-[11px] text-purple-400 font-medium">⚠️ Maximum only 15 clips allowed.</p>
+              <p className="text-[11px] text-purple-400 font-medium">⚠️ अधिकतम 15 क्लिप्स की अनुमति है।</p>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowClipCountModal(false)} className="px-3.5 py-2 rounded-xl bg-gray-800 text-xs text-gray-300">Cancel</button>
+              <button onClick={() => setShowClipCountModal(false)} className="px-3.5 py-2 rounded-xl bg-gray-800 text-xs text-gray-300">रद्द करें</button>
               <button 
                 onClick={() => {
                   const val = parseInt(customClipCountInput, 10);
@@ -952,11 +991,11 @@ export default function App() {
                   }
                   setClipCount(val);
                   setShowClipCountModal(false);
-                  setToast(`Number of clips set to ${val}`);
+                  setToast(`क्लिप्स की संख्या ${val} सेट हो गई है`);
                 }} 
                 className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs text-white font-semibold"
               >
-                Confirm Count
+                पुष्टि करें
               </button>
             </div>
           </div>
