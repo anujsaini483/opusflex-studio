@@ -174,7 +174,7 @@ export default function App() {
         if (tCtx) {
           tCtx.drawImage(vidElement, 0, 0, thumbCanvas.width, thumbCanvas.height);
         }
-        const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.8);
+        const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.85);
         vidElement.currentTime = originalTime;
         resolve(dataUrl);
       };
@@ -242,16 +242,16 @@ export default function App() {
         }
 
         setClips(dynamicClips);
-        setToast(`✨ ${clipCount} क्लिप्स (${ratio} रेश्यो और लाइव थंबनेल के साथ) तैयार हैं!`);
+        setToast(`✨ ${clipCount} क्लिप्स (${ratio} रेश्यो और एचडी थंबनेल के साथ) तैयार हैं!`);
       }
     }, 300);
   };
 
-  // FULLY OPTIMIZED LAG-FREE 30 FPS EXPORT LOGIC WITH HIGH SMOOTHNESS
+  // ULTRA SMOOTH 30 FPS EXPORT WITH 8 MBPS HIGH QUALITY BITRATE
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadProgressMap[clip.id] !== undefined) return;
     setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: 0 }));
-    setToast(`⏳ ${ratio} रेश्यो और बिनाग (Lag-free) स्मूथ क्वालिटी के साथ प्रोसेस हो रहा है...`);
+    setToast(`⏳ ${ratio} रेश्यो एचडी क्वालिटी में प्रोसेस हो रहा है...`);
 
     let audioCtx: AudioContext | null = null;
     let vid: HTMLVideoElement | null = null;
@@ -293,7 +293,7 @@ export default function App() {
       const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
       if (!ctx) throw new Error('Canvas context failed');
 
-      // High-quality smoothing to prevent pixelation and lag
+      // Maximum high-quality smoothing for crystal clear sharp video
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
@@ -321,7 +321,7 @@ export default function App() {
 
       mediaRecorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 5000000 // Optimized 5 Mbps bitrate for ultra-crisp & smooth playback
+        videoBitsPerSecond: 8000000 // Boosted to 8 Mbps for pristine crystal clear HD quality & zero pixelation
       });
 
       const chunks: Blob[] = [];
@@ -356,7 +356,7 @@ export default function App() {
           delete copy[clip.id];
           return copy;
         });
-        setToast(`📥 ${ratio} रेश्यो की स्मूथ क्लिप सफलतापूर्वक डाउनलोड हो गई!`);
+        setToast(`📥 ${ratio} रेश्यो की एचडी क्लिप सफलतापूर्वक डाउनलोड हो गई!`);
       };
 
       mediaRecorder.start(250);
@@ -365,7 +365,7 @@ export default function App() {
 
       let animationFrameId: number;
       let lastTime = performance.now();
-      const fpsInterval = 1000 / 30; // 30 FPS Lock
+      const fpsInterval = 1000 / 30; // Stable 30 FPS Lock
 
       const renderLoop = (now: DOMHighResTimeStamp) => {
         if (!vid || vid.ended || vid.currentTime >= endTime || !mediaRecorder || mediaRecorder.state !== 'recording') {
@@ -906,9 +906,7 @@ export default function App() {
                 onChange={(e) => setCustomLengthSec(Number(e.target.value))}
                 className="w-full accent-purple-600 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-gray-500 font-mono">
-                <span>1s</span>
-                <span>60s</span>
+              <div className="flex justify-end text-[10px] text-gray-500 font-mono">
                 <span>120s (2 min)</span>
               </div>
             </div>
