@@ -247,22 +247,27 @@ export default function App() {
     }, 300);
   };
 
-  // FULLY OPTIMIZED LAG-FREE & BUTTERY SMOOTH EXPORT LOGIC
+  // PRODUCTION-OPTIMIZED LAG-FREE EXPORT LOGIC
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadProgressMap[clip.id] !== undefined) return;
     setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: 0 }));
-    setToast(`⏳ ${ratio} रेश्यो और मक्खन जैसी स्मूथ क्वालिटी के साथ क्लिप प्रोसेस हो रही है...`);
+    setToast(`⏳ ${ratio} रेश्यो और स्मूथ एचडी क्वालिटी के साथ क्लिप प्रोसेस हो रही है...`);
+
+    let audioCtx: AudioContext | null = null;
+    let vid: HTMLVideoElement | null = null;
+    let mediaRecorder: MediaRecorder | null = null;
+    let stream: MediaStream | null = null;
 
     try {
-      const vid = document.createElement('video');
+      vid = document.createElement('video');
       vid.src = videoUrl;
       vid.crossOrigin = 'anonymous';
       vid.muted = false; 
       vid.playsInline = true;
 
       await new Promise((resolve, reject) => {
-        vid.onloadedmetadata = () => resolve(true);
-        vid.onerror = (e) => reject(e);
+        vid!.onloadedmetadata = () => resolve(true);
+        vid!.onerror = (e) => reject(e);
       });
 
       const startTime = clip.startTime || 0;
@@ -271,7 +276,7 @@ export default function App() {
       vid.currentTime = startTime;
 
       await new Promise((resolve) => {
-        vid.onseeked = () => resolve(true);
+        vid!.onseeked = () => resolve(true);
       });
 
       let targetW = 1080;
@@ -285,69 +290,81 @@ export default function App() {
       const canvas = document.createElement('canvas');
       canvas.width = targetW;
       canvas.height = targetH;
-      const ctx = canvas.getContext('2d', { alpha: false });
+      const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
       if (!ctx) throw new Error('Canvas context failed');
 
       const canvasStream = canvas.captureStream(30);
 
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
       const sourceNode = audioCtx.createMediaElementSource(vid);
       const destinationNode = audioCtx.createMediaStreamDestination();
       sourceNode.connect(destinationNode);
 
-      const finalStream = new MediaStream();
-      canvasStream.getVideoTracks().forEach((track) => finalStream.addTrack(track));
-      destinationNode.stream.getAudioTracks().forEach((track) => finalStream.addTrack(track));
+      stream = new MediaStream();
+      canvasStream.getVideoTracks().forEach((track) => stream!.addTrack(track));
+      destinationNode.stream.getAudioTracks().forEach((track) => stream!.addTrack(track));
 
-      let recorder: MediaRecorder;
-      try {
-        // Optimized 8 Mbps with vp8/opus for universal smooth mobile playback and zero stuttering
-        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp8,opus', videoBitsPerSecond: 8000000 });
-      } catch {
-        try {
-          recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm', videoBitsPerSecond: 8000000 });
-        } catch {
-          recorder = new MediaRecorder(finalStream);
-        }
-      }
+      const possibleTypes = [
+        'video/webm; codecs=h264,opus',
+        'video/webm; codecs=vp9,opus',
+        'video/webm; codecs=vp8,opus',
+        'video/webm'
+      ];
+      const mimeType = possibleTypes.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+
+      mediaRecorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: 4500000 // Optimized 4.5 Mbps
+      });
 
       const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => {
+      mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) chunks.push(e.data);
       };
 
-      recorder.onstop = () => {
-        if (audioCtx.state !== 'closed') {
+      mediaRecorder.onstop = () => {
+        try {
+          const blob = new Blob(chunks, { type: mimeType.split(';')[0] });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${ratio.replace(':', '_')}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (e) {
+          console.error(e);
+        }
+
+        if (audioCtx && audioCtx.state !== 'closed') {
           audioCtx.close().catch(() => {});
         }
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${clip.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${ratio.replace(':', '_')}.webm`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+        }
 
         setDownloadProgressMap((prev) => {
           const copy = { ...prev };
           delete copy[clip.id];
           return copy;
         });
-        setToast(`📥 ${ratio} रेश्यो की बिल्कुल स्मूथ क्लिप डाउनलोड हो गई!`);
+        setToast(`📥 ${ratio} रेश्यो की स्मूथ एचडी क्लिप डाउनलोड हो गई!`);
       };
 
-      // 100ms chunk interval for smooth buffering and steady timestamps
-      recorder.start(100);
+      mediaRecorder.start(250);
       vid.playbackRate = 1.0;
       vid.play().catch(() => {});
 
       let animationFrameId: number;
-      const drawFrame = () => {
-        if (vid.ended || vid.currentTime >= endTime || !recorder || recorder.state !== 'recording') {
-          if (recorder && recorder.state === 'recording') {
-            recorder.stop();
-            vid.pause();
+      const renderLoop = () => {
+        if (!vid || vid.ended || vid.currentTime >= endTime || !mediaRecorder || mediaRecorder.state !== 'recording') {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            vid?.pause();
           }
           if (animationFrameId) cancelAnimationFrame(animationFrameId);
           return;
@@ -359,28 +376,36 @@ export default function App() {
 
         const vW = vid.videoWidth;
         const vH = vid.videoHeight;
-        const targetAspect = targetW / targetH;
-        const videoAspect = vW / vH;
+        if (vW > 0 && vH > 0) {
+          const targetAspect = targetW / targetH;
+          const videoAspect = vW / vH;
 
-        let sX = 0, sY = 0, sW = vW, sH = vH;
-        if (videoAspect > targetAspect) {
-          sW = vH * targetAspect;
-          sX = (vW - sW) / 2;
-        } else {
-          sH = vW / targetAspect;
-          sY = Math.max(0, (vH - sH) * 0.2);
+          let sX = 0, sY = 0, sW = vW, sH = vH;
+          if (videoAspect > targetAspect) {
+            sW = vH * targetAspect;
+            sX = (vW - sW) / 2;
+          } else {
+            sH = vW / targetAspect;
+            sY = Math.max(0, (vH - sH) * 0.2);
+          }
+
+          ctx.clearRect(0, 0, targetW, targetH);
+          ctx.drawImage(vid, sX, sY, sW, sH, 0, 0, targetW, targetH);
         }
 
-        ctx.clearRect(0, 0, targetW, targetH);
-        ctx.drawImage(vid, sX, sY, sW, sH, 0, 0, targetW, targetH);
-
-        animationFrameId = requestAnimationFrame(drawFrame);
+        animationFrameId = requestAnimationFrame(renderLoop);
       };
 
-      animationFrameId = requestAnimationFrame(drawFrame);
+      animationFrameId = requestAnimationFrame(renderLoop);
 
     } catch (err) {
       console.error(err);
+      if (audioCtx && audioCtx.state !== 'closed') {
+        audioCtx.close().catch(() => {});
+      }
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+      }
       setDownloadProgressMap((prev) => {
         const copy = { ...prev };
         delete copy[clip.id];
