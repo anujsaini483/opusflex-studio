@@ -99,7 +99,6 @@ export default function App() {
     };
   }, [videoUrl]);
 
-  // Preview Modal Video Synchronizer with Exact Second Tracking
   useEffect(() => {
     const pVideo = previewVideoRef.current;
     if (!pVideo || !previewClip) return;
@@ -262,7 +261,6 @@ export default function App() {
     }, 300);
   };
 
-  // ULTRA SMOOTH EXPORT WITH EXACT DURATION & 8 MBPS HIGH QUALITY
   const handleDownloadClip = async (clip: GeneratedClip) => {
     if (downloadProgressMap[clip.id] !== undefined) return;
     setDownloadProgressMap((prev) => ({ ...prev, [clip.id]: 0 }));
@@ -335,7 +333,7 @@ export default function App() {
 
       mediaRecorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 8000000 // 8 Mbps High Quality & Zero Pixelation
+        videoBitsPerSecond: 8000000
       });
 
       const chunks: Blob[] = [];
@@ -459,8 +457,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#07090e] text-[#e2e8f0] font-sans antialiased selection:bg-purple-600 selection:text-white pb-16">
-      
-      {/* Top Header Bar */}
       <header className="border-b border-gray-800/60 bg-[#0b0f19]/90 backdrop-blur sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -477,17 +473,13 @@ export default function App() {
               </div>
             </div>
           </div>
-          
           <div className="w-9 h-9 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-300 cursor-pointer hover:bg-purple-600/30 transition">
             <User size={18} />
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
-
-        {/* 1. TOP MAIN VIDEO PLAYER */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] overflow-hidden shadow-2xl">
           <div className="relative bg-black w-full flex items-center justify-center overflow-hidden max-h-[440px]">
             <video 
@@ -532,7 +524,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* 2. UPLOAD VIDEO SECTION */}
         <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
           <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Upload Video (With Voice & Audio)</h2>
           
@@ -578,13 +569,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* 3. CONTROLS GRID SECTION */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          
-          {/* Left Column */}
           <div className="space-y-5">
-            
-            {/* RATIO BOX */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Target Ratio (For Shorts)</h2>
               <div className="grid grid-cols-6 gap-2">
@@ -613,10 +599,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* CAPTIONS & SUBTITLES BOX */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Captions & Subtitles</h2>
-              
               <div className="space-y-3 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-300">Auto Captions</span>
@@ -659,13 +643,9 @@ export default function App() {
                 </select>
               </div>
             </div>
-
           </div>
 
-          {/* Right Column */}
           <div className="space-y-5">
-            
-            {/* LENGTH BOX */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Length</h2>
               <div className="grid grid-cols-3 gap-2 text-xs font-medium">
@@ -698,7 +678,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* NUMBER OF CLIPS BOX */}
             <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-3.5 shadow-xl">
               <h2 className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Number of Clips</h2>
               <div className="grid grid-cols-5 gap-2 text-xs font-semibold">
@@ -724,12 +703,9 @@ export default function App() {
                 </button>
               </div>
             </div>
-
           </div>
-
         </div>
 
-        {/* 4. PRIMARY ACTION BUTTON */}
         <div>
           <button 
             onClick={handleGenerateClips}
@@ -746,7 +722,6 @@ export default function App() {
           )}
         </div>
 
-        {/* 5. GENERATED CLIPS LIST SECTION */}
         {clips.length > 0 && (
           <div className="rounded-2xl border border-gray-800/80 bg-[#0d121f] p-5 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
@@ -830,10 +805,8 @@ export default function App() {
             </div>
           </div>
         )}
-
       </main>
 
-      {/* MODAL 1: PREVIEW CLIP MODAL WITH EXACT TIMER */}
       {previewClip && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-5">
@@ -859,7 +832,6 @@ export default function App() {
               />
             </div>
 
-            {/* Custom Precise Progress Bar with Seconds Indicator */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-[11px] text-gray-400 font-mono">
                 <span>बीत गए: {formatTime(previewCurrentTime)}</span>
@@ -903,7 +875,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 2: RENAME CLIP MODAL */}
       {renameClipTarget && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
@@ -928,7 +899,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 3: CUSTOMIZE LENGTH MODAL */}
       {showLengthModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
@@ -957,7 +927,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL 4: CUSTOMIZE NUMBER OF CLIPS MODAL */}
       {showClipCountModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d121f] border border-gray-800 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
@@ -1002,7 +971,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-[#0d121f] border border-gray-800 px-4 py-3 rounded-xl text-xs text-white shadow-2xl flex items-center gap-2 backdrop-blur-md">
           <Check size={15} className="text-emerald-400" /> {toast}
